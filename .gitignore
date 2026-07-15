@@ -1,0 +1,7 @@
+# Lokale Claude-Code-Konfiguration (enthält Maschinen-Pfade)
+.claude/
+
+# Betriebssystem-Reste
+Thumbs.db
+Desktop.ini
+.DS_Store
