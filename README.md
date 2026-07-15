@@ -55,8 +55,10 @@ serve.ps1             Lokaler Entwicklungs-Server (PowerShell)
 
 ## Veröffentlichung
 
-1. **Hosting (HTTPS)**: z. B. Netlify — dieses Repository verbinden oder den
-   Ordner manuell deployen. Es sind keine Build-Schritte nötig (statische Dateien).
+1. **Hosting (HTTPS)**: GitHub Pages — in den Repo-Einstellungen unter
+   *Pages* den Branch `main` (Ordner `/root`) als Quelle wählen. Die App ist
+   dann unter `https://<name>.github.io/impfbuch-app/` erreichbar; jeder Push
+   deployt automatisch. Es sind keine Build-Schritte nötig (statische Dateien).
 2. **Google Play Store**: Mit [PWABuilder](https://www.pwabuilder.com) aus der
    gehosteten URL ein Android-Paket (`.aab`) erzeugen, die generierte
    `assetlinks.json` unter `.well-known/assetlinks.json` mit hosten und das
