@@ -1064,6 +1064,70 @@ dialog#record-dialog::backdrop {
   background: rgba(40, 35, 0, 0.4);
 }
 
+/* Ersteinrichtung */
+dialog#setup-dialog {
+  border: none;
+  border-radius: 14px;
+  padding: 0;
+  max-width: 430px;
+  width: 92%;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  color: var(--ink);
+}
+dialog#setup-dialog::backdrop {
+  background: rgba(40, 35, 0, 0.5);
+}
+.setup-content {
+  padding: 24px 22px 16px;
+  text-align: center;
+}
+.setup-emoji {
+  font-size: 2.4rem;
+  margin-bottom: 4px;
+}
+.setup-content h3 {
+  margin: 0 0 10px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.25rem;
+}
+.setup-text {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0 0 10px;
+  text-align: left;
+}
+.setup-text.muted {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+.setup-label {
+  display: block;
+  text-align: left;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+}
+.setup-label input {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+.setup-actions {
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.setup-dots {
+  margin-top: 14px;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: var(--ink-soft);
+}
+
 /* Bearbeiten-, Löschen- & Export-Dialog */
 dialog#edit-dialog,
 dialog#delete-dialog,

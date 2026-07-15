@@ -92,7 +92,7 @@
       version: 2,
       activeProfileId: p.id,
       profiles: [p],
-      settings: { notifyEnabled: false, theme: "light" },
+      settings: { notifyEnabled: false, theme: "light", setupDone: false },
     };
   }
 
@@ -126,6 +126,13 @@
     }
     if (!data.settings) data.settings = { notifyEnabled: false };
     if (!data.settings.theme) data.settings.theme = "light";
+    // Bestandsnutzer mit Profildaten/Einträgen nicht erneut durch die
+    // Ersteinrichtung schicken.
+    if (data.settings.setupDone === undefined) {
+      data.settings.setupDone = (data.profiles || []).some(
+        (p) => p.birthdate || (p.records && p.records.length)
+      );
+    }
 
     // Record-Struktur je Profil auf { targets } normalisieren
     data.profiles.forEach((p) => {
@@ -1806,6 +1813,67 @@
     });
   }
 
+  /* --------------------------------------------------------- Ersteinrichtung */
+
+  let setupStep = 1;
+
+  // Beim allerersten Start: zum Profil-Tab leiten und den Assistenten öffnen.
+  function maybeStartSetup() {
+    if (state.settings.setupDone) return;
+    activateTab("settings");
+    openSetup();
+  }
+
+  function openSetup() {
+    setupStep = 1;
+    const p = activeProfile();
+    el("#setup-name").value = p.name === "Ich" ? "" : p.name;
+    el("#setup-birthdate").value = p.birthdate || "";
+    showSetupStep();
+    el("#setup-dialog").showModal();
+  }
+
+  function showSetupStep() {
+    [1, 2, 3].forEach((n) =>
+      el("#setup-step" + n).classList.toggle("hidden", n !== setupStep)
+    );
+    el("#setup-dots").textContent =
+      ["● ○ ○", "○ ● ○", "○ ○ ●"][setupStep - 1];
+  }
+
+  // Schritt 2 → Profil übernehmen, weiter zu Schritt 3.
+  function setupSaveProfile() {
+    const p = activeProfile();
+    const name = el("#setup-name").value.trim();
+    if (name) p.name = name;
+    p.birthdate = el("#setup-birthdate").value;
+    saveData();
+    render();
+    setupStep = 3;
+    showSetupStep();
+  }
+
+  // Abschluss: Flag setzen; optional direkt den Schnelleintrag öffnen.
+  function finishSetup(openQuick) {
+    state.settings.setupDone = true;
+    saveData();
+    el("#setup-dialog").close();
+    render();
+    if (openQuick) {
+      activateTab("pass");
+      openQuickDialog();
+    } else if (activeProfile().birthdate) {
+      activateTab("pass");
+    }
+  }
+
+  // Überspringen: Flag setzen, im Profil-Tab bleiben (manuelle Einrichtung).
+  function skipSetup() {
+    state.settings.setupDone = true;
+    saveData();
+    el("#setup-dialog").close();
+  }
+
   /* ----------------------------------------------------------- Darstellung */
 
   function resolvedTheme() {
@@ -1934,12 +2002,30 @@
     el("#btn-reset").addEventListener("click", resetAll);
     el("#btn-notify").addEventListener("click", enableNotifications);
 
+    // Ersteinrichtung
+    el("#setup-start").addEventListener("click", () => {
+      setupStep = 2;
+      showSetupStep();
+    });
+    el("#setup-skip1").addEventListener("click", skipSetup);
+    el("#setup-skip2").addEventListener("click", skipSetup);
+    el("#setup-next").addEventListener("click", setupSaveProfile);
+    el("#setup-quick").addEventListener("click", () => finishSetup(true));
+    el("#setup-done").addEventListener("click", () => finishSetup(false));
+    // ESC/Schließen ohne Abschluss zählt als Überspringen (kein Nerv-Loop)
+    el("#setup-dialog").addEventListener("cancel", () => {
+      state.settings.setupDone = true;
+      saveData();
+    });
+    el("#btn-rerun-setup").addEventListener("click", openSetup);
+
     if (state.settings.notifyEnabled) {
       el("#notify-status").textContent =
         "Benachrichtigungen sind aktiviert.";
     }
 
     render();
+    maybeStartSetup();
     setTimeout(() => checkAndNotify(false), 800);
 
     if ("serviceWorker" in navigator) {

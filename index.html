@@ -167,6 +167,13 @@
         </div>
 
         <div class="form-card">
+          <button class="btn" id="btn-rerun-setup">🚀 Ersteinrichtung erneut starten</button>
+          <p class="hint">
+            Führt dich noch einmal durch Profil-Anlage und Impf-Übernahme.
+          </p>
+        </div>
+
+        <div class="form-card">
           <details class="app-details">
             <summary>Rechtliche Hinweise</summary>
             <div class="details-body">
@@ -303,6 +310,68 @@
           <button type="submit" class="btn btn-primary">Speichern</button>
         </div>
       </form>
+    </dialog>
+
+    <!-- Dialog: Ersteinrichtung -->
+    <dialog id="setup-dialog">
+      <div class="info-content setup-content">
+        <div id="setup-step1">
+          <div class="setup-emoji">👋</div>
+          <h3>Willkommen in deiner Impfbuch-App!</h3>
+          <p class="setup-text">
+            Dein digitaler Impfpass: behalte Impfungen, Auffrischungen und
+            Reiseempfehlungen im Blick. In zwei kurzen Schritten richten wir
+            alles ein.
+          </p>
+          <p class="setup-text muted">
+            🔒 Alle Daten bleiben ausschließlich auf deinem Gerät.
+          </p>
+          <div class="dlg-actions setup-actions">
+            <button type="button" class="btn btn-ghost" id="setup-skip1">Überspringen</button>
+            <button type="button" class="btn btn-primary" id="setup-start">Los geht's</button>
+          </div>
+        </div>
+
+        <div id="setup-step2" class="hidden">
+          <h3>Wer nutzt die App?</h3>
+          <label class="setup-label">
+            Name
+            <input type="text" id="setup-name" placeholder="Vor- und Nachname" />
+          </label>
+          <label class="setup-label">
+            Geburtsdatum
+            <input type="date" id="setup-birthdate" />
+          </label>
+          <p class="setup-text muted">
+            Aus dem Geburtsdatum berechnet die App, welche Impfungen wann fällig
+            sind. Weitere Personen (z. B. Kinder) kannst du später hinzufügen.
+          </p>
+          <div class="dlg-actions setup-actions">
+            <button type="button" class="btn btn-ghost" id="setup-skip2">Überspringen</button>
+            <button type="button" class="btn btn-primary" id="setup-next">Weiter</button>
+          </div>
+        </div>
+
+        <div id="setup-step3" class="hidden">
+          <h3>Impfungen übernehmen</h3>
+          <p class="setup-text">
+            Hol am besten deinen gelben Impfpass hervor und übertrage die
+            Einträge. Mit dem <strong>⚡ Schnelleintrag</strong> geht das zügig:
+            mehrere Impfungen und mehrere Daten auf einmal anhaken — z. B. die
+            komplette 6-fach-Impfung mit einem Klick.
+          </p>
+          <p class="setup-text muted">
+            Du kannst jederzeit später weitermachen — der Schnelleintrag ist
+            oben im Impfpass immer erreichbar.
+          </p>
+          <div class="dlg-actions setup-actions">
+            <button type="button" class="btn btn-ghost" id="setup-done">Später — zur App</button>
+            <button type="button" class="btn btn-primary" id="setup-quick">⚡ Jetzt eintragen</button>
+          </div>
+        </div>
+
+        <div class="setup-dots" id="setup-dots">● ○ ○</div>
+      </div>
     </dialog>
 
     <!-- Dialog: Daten exportieren (Personen wählen) -->
