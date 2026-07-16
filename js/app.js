@@ -1766,7 +1766,7 @@
         "Benachrichtigungen wurden nicht erlaubt.\n\n" +
           "So aktivierst du sie:\n" +
           "1. App-Icon lange drücken → ⓘ App-Info → Benachrichtigungen zulassen\n" +
-          "2. Danach hier erneut auf „Benachrichtigungen aktivieren" tippen.\n\n" +
+          "2. Danach hier erneut auf „Benachrichtigungen aktivieren“ tippen.\n\n" +
           "Falls es dann noch nicht klappt: In Chrome unter Einstellungen → " +
           "Website-Einstellungen → Benachrichtigungen die Blockierung für " +
           "diese Seite aufheben."
@@ -1803,22 +1803,41 @@
   }
 
   // Erinnerung beim App-Start, wenn etwas fällig/überfällig ist.
-  function checkAndNotify(force) {
-    if (!state.settings.notifyEnabled && !force) return;
-    if (!("Notification" in window) || Notification.permission !== "granted")
-      return;
-    const due = computeDueAcrossProfiles();
-    if (!due.length) return;
-    const names = due
-      .map((d) => `${d.vaccine} (${d.profile})`)
-      .slice(0, 3)
-      .join(", ");
-    new Notification("Impfpass — fällige Impfungen", {
-      body: `${due.length} Impfung(en) anstehend: ${names}${
-        due.length > 3 ? " …" : ""
-      }`,
-      icon: "icons/icon-192.png",
-    });
+  // Darf die App unter keinen Umständen lahmlegen — daher komplett abgesichert.
+  async function checkAndNotify(force) {
+    try {
+      if (!state.settings.notifyEnabled && !force) return;
+      if (!("Notification" in window) || Notification.permission !== "granted")
+        return;
+      const due = computeDueAcrossProfiles();
+      if (!due.length) return;
+      const names = due
+        .map((d) => `${d.vaccine} (${d.profile})`)
+        .slice(0, 3)
+        .join(", ");
+      const title = "Impfbuch — fällige Impfungen";
+      const opts = {
+        body: `${due.length} Impfung(en) anstehend: ${names}${
+          due.length > 3 ? " …" : ""
+        }`,
+        icon: "icons/icon-192.png",
+        badge: "icons/icon-192.png",
+        tag: "impf-due",
+      };
+      // Android-Chrome erlaubt den Notification-Konstruktor nicht —
+      // dort muss die Anzeige über den Service Worker laufen.
+      const reg =
+        "serviceWorker" in navigator
+          ? await navigator.serviceWorker.getRegistration()
+          : null;
+      if (reg && reg.showNotification) {
+        await reg.showNotification(title, opts);
+      } else {
+        new Notification(title, opts);
+      }
+    } catch (e) {
+      console.warn("Benachrichtigung fehlgeschlagen:", e);
+    }
   }
 
   /* --------------------------------------------------------- Ersteinrichtung */
