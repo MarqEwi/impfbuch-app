@@ -1125,10 +1125,11 @@ dialog#setup-dialog::backdrop {
   color: var(--ink-soft);
 }
 
-/* Bearbeiten-, Löschen- & Export-Dialog */
+/* Bearbeiten-, Löschen-, Export- & Personen-Dialog */
 dialog#edit-dialog,
 dialog#delete-dialog,
-dialog#export-dialog {
+dialog#export-dialog,
+dialog#person-dialog {
   border: none;
   border-radius: 14px;
   padding: 0;
@@ -1139,16 +1140,20 @@ dialog#export-dialog {
 }
 dialog#edit-dialog::backdrop,
 dialog#delete-dialog::backdrop,
-dialog#export-dialog::backdrop {
+dialog#export-dialog::backdrop,
+dialog#person-dialog::backdrop {
   background: rgba(40, 35, 0, 0.4);
 }
-#edit-form {
+#edit-form,
+#person-form {
   padding: 20px;
 }
-#edit-form h3 {
+#edit-form h3,
+#person-form h3 {
   margin: 0 0 6px;
 }
-#edit-form label {
+#edit-form label,
+#person-form label {
   display: block;
   font-size: 0.82rem;
   font-weight: 600;
@@ -1156,7 +1161,9 @@ dialog#export-dialog::backdrop {
   margin-bottom: 12px;
 }
 #edit-form input[type="text"],
-#edit-form input[type="date"] {
+#edit-form input[type="date"],
+#person-form input[type="text"],
+#person-form input[type="date"] {
   display: block;
   width: 100%;
   margin-top: 5px;

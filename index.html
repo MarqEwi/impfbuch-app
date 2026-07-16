@@ -149,6 +149,13 @@
         </div>
 
         <div class="form-card">
+          <button class="btn" id="btn-rerun-setup">🚀 Ersteinrichtung erneut starten</button>
+          <p class="hint">
+            Führt dich noch einmal durch Profil-Anlage und Impf-Übernahme.
+          </p>
+        </div>
+
+        <div class="form-card">
           <details class="app-details">
             <summary>Informationen zur App</summary>
             <div class="details-body">
@@ -164,13 +171,6 @@
               </p>
             </div>
           </details>
-        </div>
-
-        <div class="form-card">
-          <button class="btn" id="btn-rerun-setup">🚀 Ersteinrichtung erneut starten</button>
-          <p class="hint">
-            Führt dich noch einmal durch Profil-Anlage und Impf-Übernahme.
-          </p>
         </div>
 
         <div class="form-card">
@@ -372,6 +372,29 @@
 
         <div class="setup-dots" id="setup-dots">● ○ ○</div>
       </div>
+    </dialog>
+
+    <!-- Dialog: Neue Person anlegen -->
+    <dialog id="person-dialog">
+      <form id="person-form" method="dialog">
+        <h3>Neue Person hinzufügen</h3>
+        <label>
+          Name
+          <input type="text" id="person-name" placeholder="Vor- und Nachname" required />
+        </label>
+        <label>
+          Geburtsdatum
+          <input type="date" id="person-birthdate" />
+        </label>
+        <p class="hint" style="margin-top: 0">
+          Aus dem Geburtsdatum berechnet die App die Impf-Fälligkeiten. Du
+          kannst es auch später im Profil ergänzen.
+        </p>
+        <div class="dlg-actions">
+          <button type="button" class="btn btn-ghost" id="person-cancel">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">Anlegen</button>
+        </div>
+      </form>
     </dialog>
 
     <!-- Dialog: Daten exportieren (Personen wählen) -->

@@ -856,20 +856,37 @@
     render();
   }
 
+  // ISO-Datum, das eine Anzahl Jahre in der Vergangenheit liegt.
+  function dateYearsAgoISO(years) {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - years);
+    return d.toISOString().slice(0, 10);
+  }
+
   function addProfile() {
-    const name = prompt("Name der Person:", "");
-    if (name === null) {
-      renderProfiles(); // Auswahl im Select zurücksetzen
-      return;
-    }
-    const p = defaultProfile(name.trim() || "Person");
+    el("#person-name").value = "";
+    // Vorgabe 18 Jahre zurück — erspart langes Scrollen im Datums-Picker.
+    el("#person-birthdate").value = dateYearsAgoISO(18);
+    el("#person-dialog").showModal();
+    el("#person-name").focus();
+  }
+
+  function submitPerson(e) {
+    e.preventDefault();
+    const name = el("#person-name").value.trim();
+    if (!name) return;
+    const p = defaultProfile(name);
+    p.birthdate = el("#person-birthdate").value || "";
     state.profiles.push(p);
     state.activeProfileId = p.id;
     saveData();
+    el("#person-dialog").close();
     render();
-    // Direkt zum Profil-Tab, damit Geburtsdatum gesetzt werden kann
-    activateTab("settings");
-    el("#profile-birthdate").focus();
+  }
+
+  function cancelPersonDialog() {
+    el("#person-dialog").close();
+    renderProfiles(); // Auswahl im Deckblatt-Select zurücksetzen
   }
 
   function deleteProfile() {
@@ -1855,7 +1872,8 @@
     setupStep = 1;
     const p = activeProfile();
     el("#setup-name").value = p.name === "Ich" ? "" : p.name;
-    el("#setup-birthdate").value = p.birthdate || "";
+    // Vorgabe 18 Jahre zurück, wenn noch kein Geburtsdatum gesetzt ist
+    el("#setup-birthdate").value = p.birthdate || dateYearsAgoISO(18);
     showSetupStep();
     el("#setup-dialog").showModal();
   }
@@ -1976,6 +1994,9 @@
     el("#profile-birthdate").addEventListener("change", saveProfile);
     el("#btn-add-profile").addEventListener("click", addProfile);
     el("#btn-delete-profile").addEventListener("click", deleteProfile);
+    el("#person-form").addEventListener("submit", submitPerson);
+    el("#person-cancel").addEventListener("click", cancelPersonDialog);
+    el("#person-dialog").addEventListener("cancel", () => renderProfiles());
 
     populateTravelSelect();
     el("#travel-search").addEventListener("input", (e) => {
