@@ -1772,21 +1772,36 @@
     }
   }
 
+  // App-gestylter Meldungs-Dialog (Ersatz für hässliche Browser-Alerts).
+  function showMessage(title, html) {
+    el("#msg-title").textContent = title;
+    el("#msg-body").innerHTML = html;
+    el("#msg-dialog").showModal();
+  }
+
+  // Schritt 1: schöner Erklär-Dialog, erst danach die Systemabfrage.
+  function askNotifications() {
+    el("#notify-dialog").showModal();
+  }
+
   async function enableNotifications() {
     if (!("Notification" in window)) {
-      alert("Dieser Browser unterstützt keine Benachrichtigungen.");
+      showMessage(
+        "Nicht unterstützt",
+        "<p>Dieser Browser unterstützt leider keine Benachrichtigungen.</p>"
+      );
       return;
     }
     const perm = await Notification.requestPermission();
     if (perm !== "granted") {
-      alert(
-        "Benachrichtigungen wurden nicht erlaubt.\n\n" +
-          "So aktivierst du sie:\n" +
-          "1. App-Icon lange drücken → ⓘ App-Info → Benachrichtigungen zulassen\n" +
-          "2. Danach hier erneut auf „Benachrichtigungen aktivieren“ tippen.\n\n" +
-          "Falls es dann noch nicht klappt: In Chrome unter Einstellungen → " +
-          "Website-Einstellungen → Benachrichtigungen die Blockierung für " +
-          "diese Seite aufheben."
+      showMessage(
+        "Benachrichtigungen nicht erlaubt",
+        "<p>Kein Problem — so schaltest du sie frei:</p>" +
+          "<ol>" +
+          "<li>App-Icon <strong>lange drücken</strong> → <strong>ⓘ App-Info</strong> → <strong>Benachrichtigungen zulassen</strong></li>" +
+          "<li>Danach hier erneut auf „Benachrichtigungen aktivieren“ tippen</li>" +
+          "</ol>" +
+          "<p>Falls es dann noch nicht klappt: In Chrome unter <em>Einstellungen → Website-Einstellungen → Benachrichtigungen</em> die Blockierung für diese Seite aufheben.</p>"
       );
       return;
     }
@@ -1798,6 +1813,10 @@
     el("#notify-status").textContent = bg
       ? "✓ Aktiviert — inkl. täglicher Hintergrundprüfung."
       : "✓ Aktiviert — Erinnerung beim Öffnen der App. (Hintergrundprüfung wird von diesem Browser nicht unterstützt.)";
+    showMessage(
+      "🔔 Erinnerungen aktiv",
+      "<p>Alles eingerichtet! Die App meldet sich, sobald bei einer Person eine Impfung fällig ist.</p>"
+    );
   }
 
   // Registriert Periodic Background Sync (nur installierte Chromium-PWAs).
@@ -2048,7 +2067,15 @@
       e.target.value = "";
     });
     el("#btn-reset").addEventListener("click", resetAll);
-    el("#btn-notify").addEventListener("click", enableNotifications);
+    el("#btn-notify").addEventListener("click", askNotifications);
+    el("#notify-cancel").addEventListener("click", () =>
+      el("#notify-dialog").close()
+    );
+    el("#notify-go").addEventListener("click", () => {
+      el("#notify-dialog").close();
+      enableNotifications();
+    });
+    el("#msg-ok").addEventListener("click", () => el("#msg-dialog").close());
 
     // Ersteinrichtung
     el("#setup-start").addEventListener("click", () => {

@@ -374,6 +374,38 @@
       </div>
     </dialog>
 
+    <!-- Dialog: Benachrichtigungen aktivieren (Vorab-Erklärung) -->
+    <dialog id="notify-dialog">
+      <div class="info-content setup-content">
+        <div class="setup-emoji">🔔</div>
+        <h3>Impf-Erinnerungen aktivieren</h3>
+        <p class="setup-text">
+          Die App erinnert dich an fällige Impfungen aller Personen — beim
+          Öffnen der App und, wo möglich, per täglicher Hintergrundprüfung.
+        </p>
+        <p class="setup-text muted">
+          Dein Gerät fragt gleich einmalig nach der offiziellen Erlaubnis —
+          dieser Systemdialog gehört dazu. 🔒 Es werden dabei keine Daten
+          übertragen; alles bleibt auf deinem Gerät.
+        </p>
+        <div class="dlg-actions setup-actions">
+          <button type="button" class="btn btn-ghost" id="notify-cancel">Später</button>
+          <button type="button" class="btn btn-primary" id="notify-go">Aktivieren</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Dialog: Meldung im App-Stil (Ersatz für Browser-Alerts) -->
+    <dialog id="msg-dialog">
+      <div class="info-content">
+        <h3 id="msg-title"></h3>
+        <div id="msg-body" class="msg-body"></div>
+        <div class="dlg-actions">
+          <button type="button" class="btn btn-primary" id="msg-ok">Verstanden</button>
+        </div>
+      </div>
+    </dialog>
+
     <!-- Dialog: Neue Person anlegen -->
     <dialog id="person-dialog">
       <form id="person-form" method="dialog">
