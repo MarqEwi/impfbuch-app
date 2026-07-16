@@ -1762,7 +1762,15 @@
     }
     const perm = await Notification.requestPermission();
     if (perm !== "granted") {
-      alert("Benachrichtigungen wurden nicht erlaubt.");
+      alert(
+        "Benachrichtigungen wurden nicht erlaubt.\n\n" +
+          "So aktivierst du sie:\n" +
+          "1. App-Icon lange drücken → ⓘ App-Info → Benachrichtigungen zulassen\n" +
+          "2. Danach hier erneut auf „Benachrichtigungen aktivieren" tippen.\n\n" +
+          "Falls es dann noch nicht klappt: In Chrome unter Einstellungen → " +
+          "Website-Einstellungen → Benachrichtigungen die Blockierung für " +
+          "diese Seite aufheben."
+      );
       return;
     }
     state.settings.notifyEnabled = true;
