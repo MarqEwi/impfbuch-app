@@ -892,16 +892,17 @@
   function deleteProfile() {
     if (state.profiles.length <= 1) return;
     const active = activeProfile();
-    if (
-      !confirm(
-        `Profil „${active.name}" samt aller Impfeinträge unwiderruflich löschen?`
-      )
-    )
-      return;
-    state.profiles = state.profiles.filter((p) => p.id !== active.id);
-    state.activeProfileId = state.profiles[0].id;
-    saveData();
-    render();
+    showConfirm(
+      "Person löschen",
+      `<p>Das Profil <strong>${esc(active.name)}</strong> samt aller Impfeinträge wird <strong>unwiderruflich</strong> gelöscht.</p>`,
+      "Endgültig löschen",
+      () => {
+        state.profiles = state.profiles.filter((p) => p.id !== active.id);
+        state.activeProfileId = state.profiles[0].id;
+        saveData();
+        render();
+      }
+    );
   }
 
   function saveProfile() {
@@ -1483,12 +1484,15 @@
 
     const msg =
       rec.targets.length > 1
-        ? "Dieser Eintrag ist eine Kombinationsimpfung und zählt für mehrere Impfungen. Wirklich löschen?"
-        : "Diesen Impfeintrag wirklich löschen?";
-    if (!confirm(msg)) return;
-    active.records = active.records.filter((r) => r.id !== recId);
-    saveData();
-    render();
+        ? "<p>Dieser Eintrag ist eine <strong>Kombinationsimpfung</strong> und zählt für mehrere Impfungen. Wirklich löschen?</p>"
+        : `<p>Den Impfeintrag vom <strong>${fmtDate(
+            parseDate(rec.date)
+          )}</strong> wirklich löschen?</p>`;
+    showConfirm("Impfeintrag löschen", msg, "Löschen", () => {
+      active.records = active.records.filter((r) => r.id !== recId);
+      saveData();
+      render();
+    });
   }
 
   function performDelete(scope) {
@@ -1741,19 +1745,33 @@
           state.activeProfileId = state.profiles[0].id;
         saveData();
         render();
-        alert(`${incoming.length} Person(en) erfolgreich importiert.`);
+        showMessage(
+          "✓ Import erfolgreich",
+          `<p>${incoming.length} Person(en) wurden importiert.</p>`
+        );
       } catch (err) {
-        alert("Import fehlgeschlagen: " + err.message);
+        showMessage(
+          "Import fehlgeschlagen",
+          `<p>Die Datei konnte nicht gelesen werden.</p><p class="muted">${esc(
+            err.message
+          )}</p>`
+        );
       }
     };
     reader.readAsText(file);
   }
 
   function resetAll() {
-    if (!confirm("Alle Daten (alle Personen) unwiderruflich löschen?")) return;
-    state = defaultData();
-    saveData();
-    render();
+    showConfirm(
+      "Alle Daten löschen",
+      "<p>Sämtliche Daten <strong>aller Personen</strong> werden <strong>unwiderruflich</strong> gelöscht.</p><p>Tipp: Vorher per „Exportieren“ eine Sicherung anlegen.</p>",
+      "Alles löschen",
+      () => {
+        state = defaultData();
+        saveData();
+        render();
+      }
+    );
   }
 
   /* ---------------------------------------------------- Benachrichtigungen */
@@ -1777,6 +1795,16 @@
     el("#msg-title").textContent = title;
     el("#msg-body").innerHTML = html;
     el("#msg-dialog").showModal();
+  }
+
+  // App-gestylter Bestätigungs-Dialog (Ersatz für Browser-Confirms).
+  let confirmAction = null;
+  function showConfirm(title, html, confirmLabel, onConfirm) {
+    el("#confirm-title").textContent = title;
+    el("#confirm-body").innerHTML = html;
+    el("#confirm-go").textContent = confirmLabel;
+    confirmAction = onConfirm;
+    el("#confirm-dialog").showModal();
   }
 
   // Schritt 1: schöner Erklär-Dialog, erst danach die Systemabfrage.
@@ -2076,6 +2104,16 @@
       enableNotifications();
     });
     el("#msg-ok").addEventListener("click", () => el("#msg-dialog").close());
+    el("#confirm-cancel").addEventListener("click", () => {
+      confirmAction = null;
+      el("#confirm-dialog").close();
+    });
+    el("#confirm-go").addEventListener("click", () => {
+      const fn = confirmAction;
+      confirmAction = null;
+      el("#confirm-dialog").close();
+      if (fn) fn();
+    });
 
     // Ersteinrichtung
     el("#setup-start").addEventListener("click", () => {

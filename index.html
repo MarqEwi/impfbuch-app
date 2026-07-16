@@ -395,6 +395,18 @@
       </div>
     </dialog>
 
+    <!-- Dialog: Bestätigung im App-Stil (Ersatz für Browser-Confirms) -->
+    <dialog id="confirm-dialog">
+      <div class="info-content">
+        <h3 id="confirm-title"></h3>
+        <div id="confirm-body" class="msg-body"></div>
+        <div class="dlg-actions">
+          <button type="button" class="btn btn-ghost" id="confirm-cancel">Abbrechen</button>
+          <button type="button" class="btn btn-danger" id="confirm-go"></button>
+        </div>
+      </div>
+    </dialog>
+
     <!-- Dialog: Meldung im App-Stil (Ersatz für Browser-Alerts) -->
     <dialog id="msg-dialog">
       <div class="info-content">

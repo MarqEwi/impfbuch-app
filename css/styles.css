@@ -1061,10 +1061,11 @@ dialog#record-dialog::backdrop {
   background: rgba(40, 35, 0, 0.4);
 }
 
-/* Ersteinrichtung, Benachrichtigungs-Erklärung & Meldungs-Dialog */
+/* Ersteinrichtung, Benachrichtigungs-, Meldungs- & Bestätigungs-Dialog */
 dialog#setup-dialog,
 dialog#notify-dialog,
-dialog#msg-dialog {
+dialog#msg-dialog,
+dialog#confirm-dialog {
   border: none;
   border-radius: 14px;
   padding: 0;
@@ -1075,13 +1076,19 @@ dialog#msg-dialog {
 }
 dialog#setup-dialog::backdrop,
 dialog#notify-dialog::backdrop,
-dialog#msg-dialog::backdrop {
+dialog#msg-dialog::backdrop,
+dialog#confirm-dialog::backdrop {
   background: rgba(40, 35, 0, 0.5);
 }
-#msg-dialog h3 {
+#msg-dialog h3,
+#confirm-dialog h3 {
   margin: 0 0 10px;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1.15rem;
+}
+.msg-body .muted {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
 }
 .msg-body p,
 .msg-body li {
