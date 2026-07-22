@@ -1,0 +1,16 @@
+{
+  "appId": "io.github.marqewi.impfbuch",
+  "appName": "Impfbuch",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "launchAutoHide": true,
+      "backgroundColor": "#E9C94A",
+      "showSpinner": false
+    }
+  }
+}

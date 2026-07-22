@@ -1,6 +1,13 @@
 # Lokale Claude-Code-Konfiguration (enthält Maschinen-Pfade)
 .claude/
 
+# Node / Capacitor
+node_modules/
+www/
+
+# Persönliche lokale Ordner (nicht Teil der App)
+Screenshot/
+
 # Betriebssystem-Reste
 Thumbs.db
 Desktop.ini

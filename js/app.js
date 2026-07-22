@@ -1699,7 +1699,7 @@
     downloadExport(ids);
   }
 
-  function downloadExport(ids) {
+  async function downloadExport(ids) {
     const profiles = state.profiles.filter((p) => ids.includes(p.id));
     if (!profiles.length) return;
     const data = {
@@ -1710,21 +1710,28 @@
       profiles,
       settings: state.settings || { notifyEnabled: false },
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
     const namePart =
       profiles.length === 1
         ? profiles[0].name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()
         : `${profiles.length}-personen`;
-    a.href = url;
-    a.download = `impfpass-${namePart}-${new Date()
+    const filename = `impfpass-${namePart}-${new Date()
       .toISOString()
       .slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    // Läuft über die Native-Brücke: in der Android-App per Dateisystem +
+    // Teilen-Dialog, im Browser als klassischer Download.
+    try {
+      await window.NativeBridge.saveTextFile(
+        filename,
+        JSON.stringify(data, null, 2),
+        "application/json"
+      );
+    } catch (e) {
+      console.warn("Export fehlgeschlagen:", e);
+      showMessage(
+        "Export fehlgeschlagen",
+        "<p>Die Datei konnte nicht gespeichert/geteilt werden. Bitte versuche es erneut.</p>"
+      );
+    }
   }
 
   function importData(file) {
@@ -2141,7 +2148,12 @@
     maybeStartSetup();
     setTimeout(() => checkAndNotify(false), 800);
 
-    if ("serviceWorker" in navigator) {
+    // Service Worker NUR im Web (github.io) registrieren — in der nativen
+    // Capacitor-App sind die Dateien lokal, ein SW wäre dort nur Fehlerquelle.
+    if (
+      "serviceWorker" in navigator &&
+      location.hostname.endsWith("github.io")
+    ) {
       navigator.serviceWorker
         .register("sw.js")
         .catch((e) => console.warn("SW-Registrierung fehlgeschlagen:", e));
