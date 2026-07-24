@@ -2032,29 +2032,29 @@ dialog#quick-dialog::backdrop {
    nur heller/gleichmäßig und ohne die kräftige Papiertextur. */
 :root[data-theme="neutral"] {
   color-scheme: light;
-  --pass-yellow: #e9c94a;
-  --pass-yellow-dark: #d4b02f;
-  --pass-cream: #fbf4da;
-  --paper: #fffef5;
-  --ink: #2b2b26;
-  --ink-soft: #5c5b52;
-  --line: #e8dcb2;
-  --line-strong: #d0c085;
-  --btn-border: rgba(70, 58, 20, 0.3);
-  --btn-shadow: 0 1px 2px rgba(90, 70, 10, 0.12);
-  --btn-shadow-hover: 0 2px 6px rgba(90, 70, 10, 0.16);
-  --shadow: 0 2px 12px rgba(90, 70, 10, 0.1);
+  --pass-yellow: #edd83a;
+  --pass-yellow-dark: #d9be2c;
+  --pass-cream: #f9f0a6;
+  --paper: #fdf9d6;
+  --ink: #2b2b23;
+  --ink-soft: #5c5843;
+  --line: #ded03f;
+  --line-strong: #c7b432;
+  --btn-border: rgba(70, 58, 12, 0.34);
+  --btn-shadow: 0 1px 2px rgba(90, 70, 5, 0.14);
+  --btn-shadow-hover: 0 2px 6px rgba(90, 70, 5, 0.18);
+  --shadow: 0 2px 12px rgba(90, 70, 5, 0.12);
   --stamp-blue: #3a5a8c;
 }
 :root[data-theme="neutral"] body {
-  background-color: #f7ecc2;
+  background-color: #eedb35;
   background-image: none;
 }
 :root[data-theme="neutral"] .app-header {
   color: var(--ink);
 }
 :root[data-theme="neutral"] .pass-cover {
-  background: #fbf3d5;
+  background: #f6e86c;
   border-color: var(--line-strong);
   box-shadow: var(--shadow);
 }
@@ -2063,7 +2063,7 @@ dialog#quick-dialog::backdrop {
 }
 :root[data-theme="neutral"] .profile-switch {
   color: var(--ink);
-  background: #fdf7e0;
+  background: #faf29a;
   border-bottom-color: var(--line-strong);
 }
 :root[data-theme="neutral"] .holder-value,
@@ -2072,6 +2072,6 @@ dialog#quick-dialog::backdrop {
   border-bottom-color: var(--line-strong);
 }
 :root[data-theme="neutral"] .tabs {
-  background: #fffef5;
+  background: #fdf9d6;
 }
 /* Premium bleibt golden — Marken-Akzent, auch in neutraler Ansicht. */

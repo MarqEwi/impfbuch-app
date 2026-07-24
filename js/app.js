@@ -2205,7 +2205,7 @@
       resolved === "dark"
         ? "#1c1913"
         : resolved === "neutral"
-        ? "#f7ecc2"
+        ? "#eedb35"
         : "#e9c94a";
     if (tc) tc.setAttribute("content", bar);
   }
