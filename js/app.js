@@ -565,10 +565,14 @@
         </div>
         ${c.note ? `<p class="travel-note">${esc(c.note)}</p>` : ""}
         ${
-          code !== "world" && !isPremium()
+          !isPremium()
             ? `<button type="button" class="travel-toggle locked" id="travel-locked">
                  ${svgIcon("lock", "ic-inline")}
-                 <span>Ich reise in dieses Land — Empfehlungen übernehmen
+                 <span>${
+                   code === "world"
+                     ? "Weltweiten Impfschutz — Empfehlungen übernehmen"
+                     : "Ich reise in dieses Land — Empfehlungen übernehmen"
+                 }
                    <em class="premium-tag">Premium</em></span>
                </button>`
             : `<label class="travel-toggle ${going ? "on" : ""}">
@@ -588,8 +592,8 @@
     if (locked)
       locked.addEventListener("click", () =>
         showPremiumDialog(
-          `<p>Das Übernehmen länderspezifischer Reiseempfehlungen in deinen Impfpass ist eine <strong>Premium</strong>-Funktion.</p>` +
-            `<p>Der <strong>weltweite Impfschutz</strong> und alle Länder-Infos bleiben kostenlos.</p>`
+          `<p>Das Übernehmen von Reiseempfehlungen in deinen Impfpass ist eine <strong>Premium</strong>-Funktion.</p>` +
+            `<p>Die Reise- und Länder-Infos sowie der Überblick bleiben kostenlos.</p>`
         )
       );
   }
@@ -2201,7 +2205,7 @@
       resolved === "dark"
         ? "#1c1913"
         : resolved === "neutral"
-        ? "#f5f6f8"
+        ? "#f4efe3"
         : "#e9c94a";
     if (tc) tc.setAttribute("content", bar);
   }

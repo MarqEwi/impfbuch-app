@@ -1343,7 +1343,8 @@ dialog#person-dialog::backdrop {
   background: rgba(255, 255, 255, 0.05);
 }
 :root[data-theme="neutral"] .radio-item:has(input:checked) {
-  background: rgba(86, 98, 116, 0.12);
+  border-color: var(--pass-yellow-dark);
+  background: rgba(195, 171, 116, 0.18);
 }
 .tgt-item {
   display: flex !important;
@@ -2027,32 +2028,33 @@ dialog#quick-dialog::backdrop {
 }
 
 /* ======================================================= NEUTRALE ANSICHT */
-/* Ruhige, moderne Hell-Ansicht ohne den gelben Impfpass-Look. */
+/* Warme, leicht beige Hell-Ansicht — wie der Impfpass, nur heller und
+   dezenter im Farbton (kein kräftiges Gelb). */
 :root[data-theme="neutral"] {
   color-scheme: light;
-  --pass-yellow: #7c8aa0;
-  --pass-yellow-dark: #566274;
-  --pass-cream: #f2f4f7;
-  --paper: #ffffff;
-  --ink: #232831;
-  --ink-soft: #5c636e;
-  --line: #e0e4ea;
-  --line-strong: #c6ccd6;
-  --btn-border: rgba(40, 50, 65, 0.26);
-  --btn-shadow: 0 1px 2px rgba(30, 40, 60, 0.1);
-  --btn-shadow-hover: 0 2px 6px rgba(30, 40, 60, 0.14);
-  --shadow: 0 2px 12px rgba(30, 40, 60, 0.1);
-  --stamp-blue: #3f6098;
+  --pass-yellow: #dcc793;
+  --pass-yellow-dark: #c3ab74;
+  --pass-cream: #f7f1e5;
+  --paper: #fffdf8;
+  --ink: #2f2b23;
+  --ink-soft: #6b6456;
+  --line: #e7e0cf;
+  --line-strong: #d3c8ac;
+  --btn-border: rgba(70, 60, 30, 0.28);
+  --btn-shadow: 0 1px 2px rgba(80, 65, 25, 0.12);
+  --btn-shadow-hover: 0 2px 6px rgba(80, 65, 25, 0.16);
+  --shadow: 0 2px 12px rgba(80, 65, 25, 0.1);
+  --stamp-blue: #3a5a8c;
 }
 :root[data-theme="neutral"] body {
-  background-color: #edeff3;
+  background-color: #f4efe3;
   background-image: none;
 }
 :root[data-theme="neutral"] .app-header {
   color: var(--ink);
 }
 :root[data-theme="neutral"] .pass-cover {
-  background: #ffffff;
+  background: #fffdf8;
   border-color: var(--line-strong);
   box-shadow: var(--shadow);
 }
@@ -2061,7 +2063,7 @@ dialog#quick-dialog::backdrop {
 }
 :root[data-theme="neutral"] .profile-switch {
   color: var(--ink);
-  background: #f4f6f8;
+  background: #f7f2e6;
   border-bottom-color: var(--line-strong);
 }
 :root[data-theme="neutral"] .holder-value,
@@ -2070,13 +2072,6 @@ dialog#quick-dialog::backdrop {
   border-bottom-color: var(--line-strong);
 }
 :root[data-theme="neutral"] .tabs {
-  background: #ffffff;
-}
-:root[data-theme="neutral"] .btn-primary {
-  color: #ffffff;
-}
-:root[data-theme="neutral"] .theme-btn.active,
-:root[data-theme="neutral"] .prof-chip.active {
-  color: #ffffff;
+  background: #fffdf8;
 }
 /* Premium bleibt golden — Marken-Akzent, auch in neutraler Ansicht. */
