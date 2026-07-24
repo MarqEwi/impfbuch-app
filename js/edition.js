@@ -1,16 +1,68 @@
 /*
- * Zentraler Edition-Schalter (Vorbereitung für spätere Varianten).
+ * Zentraler Edition-Schalter + Diagnose.
  *
- * Aktuell gibt es genau EINE Edition: kostenlos, ohne Werbung, ohne Limits.
- * Wenn später Werbung + kaufbare werbefreie Version kommen, wird NUR hier
- * umgeschaltet — der restliche Code fragt ausschließlich window.EDITION ab
- * und enthält keine verstreuten Flags.
+ * EINE Quelle der Wahrheit für „kostenlos (mit Werbung)" vs. „Premium":
+ *   - window.EDITION            → In-Memory-Flags, die der restliche Code abfragt
+ *   - window.Edition.set(flavor) → schaltet um und feuert das Event
+ *     "edition:changed" (app.js persistiert dann + aktualisiert Werbung/UI)
+ *
+ * Der Kauf (purchase.js) und der Test-Schalter im Premium-Dialog rufen beide
+ * NUR window.Edition.set("premium" | "free") auf — so gibt es genau einen Weg.
+ * Persistiert wird der Status in app.js unter state.settings.premium.
  */
-window.EDITION = {
-  // "free" | künftig z. B. "premium"
-  flavor: "free",
-  // Werbung anzeigen? (bewusst noch nirgends implementiert)
-  adsEnabled: false,
-  // Premium-Funktionen freigeschaltet? (bewusst noch nirgends implementiert)
-  premium: false,
-};
+(function () {
+  "use strict";
+
+  window.EDITION = {
+    flavor: "free", // "free" | "premium"
+    adsEnabled: true, // Werbung nur in der kostenlosen Edition (und nur nativ)
+    premium: false,
+  };
+
+  window.Edition = {
+    isPremium() {
+      return window.EDITION.flavor === "premium";
+    },
+    // Schaltet die Edition um (ohne selbst zu persistieren) und benachrichtigt
+    // den Rest der App. `silent` unterdrückt das Event (nur für die Erst-
+    // initialisierung aus dem gespeicherten Zustand).
+    set(flavor, silent) {
+      const premium = flavor === "premium";
+      window.EDITION.flavor = premium ? "premium" : "free";
+      window.EDITION.premium = premium;
+      window.EDITION.adsEnabled = !premium;
+      if (window.Diag) window.Diag.set("edition", window.EDITION.flavor);
+      if (!silent) {
+        document.dispatchEvent(
+          new CustomEvent("edition:changed", {
+            detail: { flavor: window.EDITION.flavor },
+          })
+        );
+      }
+    },
+  };
+
+  /*
+   * Diagnose-Statuszeile (Learning G25): zeigt am Gerät den letzten Stand von
+   * Werbung & Kauf. Wird in „Über diese App" ausgegeben, sofern MONETIZE.DIAG
+   * an ist. Vor der Veröffentlichung MONETIZE.DIAG auf false setzen.
+   */
+  window.Diag = {
+    data: { ads: "—", purchase: "—", edition: "free" },
+    set(key, value) {
+      this.data[key] = value;
+      this.render();
+    },
+    render() {
+      const e = document.getElementById("diag-line");
+      if (!e) return;
+      if (!window.MONETIZE || !window.MONETIZE.DIAG) {
+        e.textContent = "";
+        return;
+      }
+      e.textContent =
+        `Werbung: ${this.data.ads} · Kauf: ${this.data.purchase} · ` +
+        `Edition: ${this.data.edition}`;
+    },
+  };
+})();

@@ -203,11 +203,21 @@
           </p>
         </div>
 
+        <div class="form-card hidden" id="ad-privacy-card">
+          <button class="btn" id="btn-ad-privacy">
+            <span class="ic" data-icon="shieldCheck"></span> Werbe-Einstellungen ändern
+          </button>
+          <p class="hint">
+            Deine Einwilligung zu personalisierter Werbung anpassen.
+          </p>
+        </div>
+
         <div class="form-card">
           <details class="app-details">
             <summary>Informationen zur App</summary>
             <div class="details-body">
               <p><strong>Impfbuch-App</strong> · Version 2.0</p>
+              <p class="diag-line" id="diag-line"></p>
               <p>
                 Digitaler Impfpass im Stil des deutschen Impfausweises — mit
                 STIKO-Impfschema, Fälligkeits- und Reiseempfehlungen. Ergänzend
@@ -619,6 +629,10 @@
         <ul class="premium-benefits">
           <li>
             <span class="ic" data-icon="check"></span>
+            <span><strong>Keine Werbung</strong> — Banner unten verschwindet</span>
+          </li>
+          <li>
+            <span class="ic" data-icon="check"></span>
             <span><strong>Unbegrenzt Profile</strong> — für die ganze Familie</span>
           </li>
           <li>
@@ -632,22 +646,38 @@
           </li>
         </ul>
         <p class="hint">
-          Alle Daten bleiben wie gewohnt ausschließlich lokal auf deinem Gerät.
+          Einmaliger Kauf, danach dauerhaft freigeschaltet. Alle Daten bleiben
+          wie gewohnt ausschließlich lokal auf deinem Gerät.
         </p>
-        <div class="dlg-actions">
-          <button type="button" class="btn btn-ghost" id="premium-off">
+        <div class="dlg-actions premium-actions">
+          <button type="button" class="btn btn-ghost hidden" id="premium-off">
             Premium deaktivieren
           </button>
+          <button type="button" class="btn btn-ghost" id="premium-restore">
+            Käufe wiederherstellen
+          </button>
           <button type="button" class="btn btn-primary btn-premium" id="premium-go">
-            <span class="ic" data-icon="gem"></span> Premium freischalten
+            <span class="ic" data-icon="gem"></span>
+            Premium freischalten · <span id="premium-price">2,99 €</span>
           </button>
         </div>
       </div>
     </dialog>
 
+    <!-- Werbe-/Platzhalterleiste unten (Learning C11) -->
+    <div id="ad-bar" class="ad-bar hidden" aria-hidden="true">
+      <span class="ad-bar-text">Werbefrei &amp; unbegrenzt mit Premium</span>
+      <button type="button" class="ad-bar-btn" id="ad-bar-cta">
+        <span class="ic" data-icon="gem"></span> Premium
+      </button>
+    </div>
+
     <script src="js/edition.js"></script>
+    <script src="js/monetize-config.js"></script>
     <script src="js/icons.js"></script>
     <script src="js/native-bridge.js"></script>
+    <script src="js/ads.js"></script>
+    <script src="js/purchase.js"></script>
     <script src="js/reminders-db.js"></script>
     <script src="js/stiko-data.js"></script>
     <script src="js/travel-data.js"></script>

@@ -1901,12 +1901,14 @@
           // Einstellungen aus dem Backup übernehmen (Theme, Premium,
           // Erinnerungen, Ersteinrichtung).
           state.settings = Object.assign({}, state.settings, parsed.settings);
-          if (window.EDITION) window.EDITION.premium = !!state.settings.premium;
+          if (window.Edition)
+            window.Edition.set(state.settings.premium ? "premium" : "free", true);
         }
         saveData();
         applyTheme();
         renderThemeButtons();
         render();
+        if (restoreSettings && window.Ads) window.Ads.refresh();
         showMessage(
           "Import erfolgreich",
           `<p>${svgIcon("check", "ic-inline")} ${incoming.length} Person(en) wurden importiert${
@@ -1977,6 +1979,7 @@
   // Dialog gerade erscheint (z. B. Profil-Grenze erreicht).
   function showPremiumDialog(reasonHtml) {
     const active = isPremium();
+    const native = !!(window.NativeBridge && window.NativeBridge.isNative());
     el("#premium-reason").innerHTML =
       !active && reasonHtml ? `<div class="premium-reason">${reasonHtml}</div>` : "";
     el("#premium-status").innerHTML = active
@@ -1985,30 +1988,35 @@
           "ic-inline"
         )} Premium ist aktiv — vielen Dank für deine Unterstützung!</div>`
       : "";
-    // Kauf-Button nur ohne Premium; „deaktivieren" nur mit (zum Testen).
+    // Preis anzeigen (echter Store-Preis oder Fallback).
+    const priceEl = el("#premium-price");
+    if (priceEl && window.Purchase) priceEl.textContent = window.Purchase.price();
+    // Kauf-Button nur ohne Premium; „deaktivieren" nur mit (Test-Schalter).
     el("#premium-go").classList.toggle("hidden", active);
     el("#premium-off").classList.toggle("hidden", !active);
+    // „Käufe wiederherstellen" nur nativ und nur solange nicht Premium.
+    el("#premium-restore").classList.toggle("hidden", active || !native);
     el("#premium-dialog").showModal();
   }
 
-  // Schaltet Premium um. TODO: an echten Kauf (RevenueCat/Play Billing)
-  // koppeln — bis dahin lokaler Schalter, damit sich die Freischaltung
-  // vollständig testen lässt.
-  function setPremium(on) {
-    state.settings.premium = !!on;
-    if (window.EDITION) window.EDITION.premium = !!on;
+  // Reaktion auf einen Edition-Wechsel (Kauf, Test-Schalter, Wiederherstellen).
+  // Persistiert den Premium-Status und aktualisiert UI + Werbung.
+  function onEditionChanged(e) {
+    state.settings.premium = !!(window.EDITION && window.EDITION.premium);
     saveData();
-    el("#premium-dialog").close();
     render();
     renderPremiumCard();
-    if (on)
+    if (window.Ads) window.Ads.refresh();
+    if (el("#premium-dialog").open) el("#premium-dialog").close();
+    if (e && e.detail && e.detail.flavor === "premium") {
       showMessage(
         "Premium aktiv",
         `<p>${svgIcon(
           "check",
           "ic-inline"
-        )} Alle Premium-Funktionen sind jetzt freigeschaltet: beliebig viele Profile und länderspezifische Reiseempfehlungen.</p>`
+        )} Alle Premium-Funktionen sind freigeschaltet — und die Werbung ist deaktiviert.</p>`
       );
+    }
   }
 
   // Aktualisiert die Premium-Schaltfläche unter „Profil".
@@ -2369,13 +2377,33 @@
     });
     el("#btn-rerun-setup").addEventListener("click", openSetup);
 
-    // Premium
+    // Premium & Werbung
     el("#btn-premium").addEventListener("click", () => showPremiumDialog());
     el("#premium-close").addEventListener("click", () =>
       el("#premium-dialog").close()
     );
-    el("#premium-go").addEventListener("click", () => setPremium(true));
-    el("#premium-off").addEventListener("click", () => setPremium(false));
+    // Kauf (nativ) bzw. Test-Freischaltung (Browser) — läuft über Purchase.
+    el("#premium-go").addEventListener("click", () => {
+      if (window.Purchase) window.Purchase.buy();
+    });
+    // Test-Schalter zum Deaktivieren (nur solange kein echter Kauf aktiv ist).
+    el("#premium-off").addEventListener("click", () => {
+      if (window.Edition) window.Edition.set("free");
+    });
+    el("#premium-restore").addEventListener("click", async () => {
+      if (!window.Purchase) return;
+      const r = await window.Purchase.restore();
+      if (r && r.unavailable)
+        showMessage(
+          "Nur in der App",
+          "<p>Käufe können nur in der über Google Play installierten App wiederhergestellt werden.</p>"
+        );
+    });
+    el("#ad-bar-cta").addEventListener("click", () => showPremiumDialog());
+    el("#btn-ad-privacy").addEventListener("click", () => {
+      if (window.Ads) window.Ads.showPrivacyOptions();
+    });
+    document.addEventListener("edition:changed", onEditionChanged);
 
     if (state.settings.notifyEnabled) {
       el("#notify-status").textContent =
@@ -2385,6 +2413,14 @@
     render();
     maybeStartSetup();
     setTimeout(() => checkAndNotify(false), 800);
+
+    // Monetarisierung starten: Edition aus gespeichertem Zustand übernehmen
+    // (silent = ohne Event-Schleife), dann Kauf- und Werbe-Module initialisieren.
+    if (window.Edition)
+      window.Edition.set(state.settings.premium ? "premium" : "free", true);
+    if (window.Purchase) window.Purchase.init();
+    if (window.Ads) window.Ads.init();
+    if (window.Diag) window.Diag.render();
 
     // Service Worker NUR im Web (github.io) registrieren — in der nativen
     // Capacitor-App sind die Dateien lokal, ein SW wäre dort nur Fehlerquelle.

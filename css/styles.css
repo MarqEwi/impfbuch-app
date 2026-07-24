@@ -2027,6 +2027,76 @@ dialog#quick-dialog::backdrop {
   flex-shrink: 0;
 }
 
+/* ================================================= WERBUNG / KAUF-LAYOUT */
+/* Reservierter Platz unten, damit das Banner keine Inhalte verdeckt. */
+:root {
+  --ad-height: 0px;
+}
+body {
+  padding-bottom: var(--ad-height);
+}
+/* Dezente Werbe-/Platzhalterleiste unten */
+.ad-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--paper);
+  border-top: 1px solid var(--line-strong);
+  box-shadow: 0 -2px 10px rgba(45, 35, 0, 0.12);
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.ad-bar-text {
+  flex: 1;
+  min-width: 0;
+}
+.ad-bar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #c99a1e;
+  background: linear-gradient(135deg, #f4dd88, #e3b840);
+  color: #4a3a00;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ad-bar-btn .ic-svg {
+  width: 1em;
+  height: 1em;
+  color: #7a5a00;
+}
+/* Premium-Dialog: Aktionen untereinander (Kauf oben, dann Wiederherstellen) */
+.premium-actions {
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 8px;
+}
+.premium-actions .btn {
+  width: 100%;
+}
+/* Diagnose-Statuszeile (nur bei MONETIZE.DIAG befüllt) */
+.diag-line {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.72rem !important;
+  color: var(--ink-soft);
+  word-break: break-word;
+}
+.diag-line:empty {
+  display: none;
+}
+
 /* ======================================================= NEUTRALE ANSICHT */
 /* Helles, ruhiges Gelb passend zum Impfausweis — wie der „Hell"-Modus,
    nur heller/gleichmäßig und ohne die kräftige Papiertextur. */
