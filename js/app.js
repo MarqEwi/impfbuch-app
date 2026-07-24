@@ -92,7 +92,12 @@
       version: 2,
       activeProfileId: p.id,
       profiles: [p],
-      settings: { notifyEnabled: false, theme: "light", setupDone: false },
+      settings: {
+        notifyEnabled: false,
+        theme: "light",
+        setupDone: false,
+        premium: false,
+      },
     };
   }
 
@@ -126,6 +131,7 @@
     }
     if (!data.settings) data.settings = { notifyEnabled: false };
     if (!data.settings.theme) data.settings.theme = "light";
+    if (data.settings.premium === undefined) data.settings.premium = false;
     // Bestandsnutzer mit Profildaten/Einträgen nicht erneut durch die
     // Ersteinrichtung schicken.
     if (data.settings.setupDone === undefined) {
@@ -169,6 +175,13 @@
   }
 
   let state = loadData();
+
+  /* -------------------------------------------------------------- Premium */
+  // Zentrale Gratis-Grenze: ohne Premium max. 2 Profile.
+  const FREE_PROFILE_LIMIT = 2;
+  const isPremium = () =>
+    !!(state.settings && state.settings.premium) ||
+    !!(window.EDITION && window.EDITION.premium);
 
   const activeProfile = () =>
     state.profiles.find((p) => p.id === state.activeProfileId) ||
@@ -395,6 +408,7 @@
     renderHidden();
     renderTravelSelected();
     renderTravelPanel();
+    renderPremiumCard();
     persistDueToDB();
   }
 
@@ -550,17 +564,34 @@
           <p>Standardimpfungen (Tetanus, Diphtherie, Keuchhusten, Poliomyelitis, MMR) sollten aktuell sein.</p>
         </div>
         ${c.note ? `<p class="travel-note">${esc(c.note)}</p>` : ""}
-        <label class="travel-toggle ${going ? "on" : ""}">
-          <input type="checkbox" id="travel-going" ${going ? "checked" : ""} />
-          <span>${
-            code === "world"
-              ? "Weltweiten Impfschutz — Empfehlungen in Impfpass &amp; Fällig übernehmen"
-              : "Ich reise in dieses Land — Empfehlungen in Impfpass &amp; Fällig übernehmen"
-          }</span>
-        </label>
+        ${
+          code !== "world" && !isPremium()
+            ? `<button type="button" class="travel-toggle locked" id="travel-locked">
+                 ${svgIcon("lock", "ic-inline")}
+                 <span>Ich reise in dieses Land — Empfehlungen übernehmen
+                   <em class="premium-tag">Premium</em></span>
+               </button>`
+            : `<label class="travel-toggle ${going ? "on" : ""}">
+                 <input type="checkbox" id="travel-going" ${going ? "checked" : ""} />
+                 <span>${
+                   code === "world"
+                     ? "Weltweiten Impfschutz — Empfehlungen in Impfpass &amp; Fällig übernehmen"
+                     : "Ich reise in dieses Land — Empfehlungen in Impfpass &amp; Fällig übernehmen"
+                 }</span>
+               </label>`
+        }
         <p class="info-disclaimer">Kuratierte Auswahl, keine reisemedizinische Beratung. Bitte vor der Reise ärztlich beraten lassen (auch zu Malaria-Prophylaxe u. Ä.).</p>
       </div>`;
-    el("#travel-going").addEventListener("change", () => toggleTravel(code));
+    const goingBox = el("#travel-going");
+    if (goingBox) goingBox.addEventListener("change", () => toggleTravel(code));
+    const locked = el("#travel-locked");
+    if (locked)
+      locked.addEventListener("click", () =>
+        showPremiumDialog(
+          `<p>Das Übernehmen länderspezifischer Reiseempfehlungen in deinen Impfpass ist eine <strong>Premium</strong>-Funktion.</p>` +
+            `<p>Der <strong>weltweite Impfschutz</strong> und alle Länder-Infos bleiben kostenlos.</p>`
+        )
+      );
   }
 
   /* ------------------------------------------------- Impfungen aus-/einblenden */
@@ -864,6 +895,15 @@
   }
 
   function addProfile() {
+    // Gratis-Grenze: ohne Premium nur FREE_PROFILE_LIMIT Profile.
+    if (!isPremium() && state.profiles.length >= FREE_PROFILE_LIMIT) {
+      renderProfiles(); // Deckblatt-Select zurücksetzen (war evtl. auf „__add__")
+      showPremiumDialog(
+        `<p>In der kostenlosen Version kannst du bis zu <strong>${FREE_PROFILE_LIMIT} Profile</strong> anlegen — ideal für dich und eine weitere Person.</p>` +
+          `<p>Mit <strong>Premium</strong> legst du <strong>beliebig viele</strong> Profile an, z. B. für die ganze Familie.</p>`
+      );
+      return;
+    }
     el("#person-name").value = "";
     // Vorgabe 18 Jahre zurück — erspart langes Scrollen im Datums-Picker.
     el("#person-birthdate").value = dateYearsAgoISO(18);
@@ -1814,6 +1854,62 @@
     el("#confirm-dialog").showModal();
   }
 
+  /* -------------------------------------------------------------- Premium */
+
+  // Zeigt den Premium-Dialog. `reasonHtml` (optional) erklärt oben, warum der
+  // Dialog gerade erscheint (z. B. Profil-Grenze erreicht).
+  function showPremiumDialog(reasonHtml) {
+    const active = isPremium();
+    el("#premium-reason").innerHTML =
+      !active && reasonHtml ? `<div class="premium-reason">${reasonHtml}</div>` : "";
+    el("#premium-status").innerHTML = active
+      ? `<div class="premium-active">${svgIcon(
+          "check",
+          "ic-inline"
+        )} Premium ist aktiv — vielen Dank für deine Unterstützung!</div>`
+      : "";
+    // Kauf-Button nur ohne Premium; „deaktivieren" nur mit (zum Testen).
+    el("#premium-go").classList.toggle("hidden", active);
+    el("#premium-off").classList.toggle("hidden", !active);
+    el("#premium-dialog").showModal();
+  }
+
+  // Schaltet Premium um. TODO: an echten Kauf (RevenueCat/Play Billing)
+  // koppeln — bis dahin lokaler Schalter, damit sich die Freischaltung
+  // vollständig testen lässt.
+  function setPremium(on) {
+    state.settings.premium = !!on;
+    if (window.EDITION) window.EDITION.premium = !!on;
+    saveData();
+    el("#premium-dialog").close();
+    render();
+    renderPremiumCard();
+    if (on)
+      showMessage(
+        "Premium aktiv",
+        `<p>${svgIcon(
+          "check",
+          "ic-inline"
+        )} Alle Premium-Funktionen sind jetzt freigeschaltet: beliebig viele Profile und länderspezifische Reiseempfehlungen.</p>`
+      );
+  }
+
+  // Aktualisiert die Premium-Schaltfläche unter „Profil".
+  function renderPremiumCard() {
+    const btn = el("#btn-premium");
+    if (!btn) return;
+    const active = isPremium();
+    btn.classList.toggle("is-premium", active);
+    btn.innerHTML = active
+      ? `${svgIcon("gem")}<span>Premium aktiv</span>`
+      : `${svgIcon("gem")}<span>Premium freischalten</span>`;
+    const hint = el("#premium-hint");
+    if (hint)
+      hint.textContent = active
+        ? "Beliebig viele Profile und länderspezifische Reiseempfehlungen sind freigeschaltet."
+        : "Beliebig viele Profile und länderspezifische Reiseempfehlungen freischalten.";
+  }
+
   // Schritt 1: schöner Erklär-Dialog, erst danach die Systemabfrage.
   function askNotifications() {
     el("#notify-dialog").showModal();
@@ -1988,7 +2084,13 @@
     const resolved = resolvedTheme();
     document.documentElement.setAttribute("data-theme", resolved);
     const tc = document.querySelector('meta[name="theme-color"]');
-    if (tc) tc.setAttribute("content", resolved === "dark" ? "#1c1913" : "#e9c94a");
+    const bar =
+      resolved === "dark"
+        ? "#1c1913"
+        : resolved === "neutral"
+        ? "#f5f6f8"
+        : "#e9c94a";
+    if (tc) tc.setAttribute("content", bar);
   }
 
   function setTheme(choice) {
@@ -2025,6 +2127,9 @@
   /* ------------------------------------------------------------------ Init */
 
   function init() {
+    // Statische Emoji-Platzhalter durch moderne SVG-Icons ersetzen.
+    if (window.hydrateIcons) window.hydrateIcons(document);
+
     setupTabs();
 
     applyTheme();
@@ -2138,6 +2243,14 @@
       saveData();
     });
     el("#btn-rerun-setup").addEventListener("click", openSetup);
+
+    // Premium
+    el("#btn-premium").addEventListener("click", () => showPremiumDialog());
+    el("#premium-close").addEventListener("click", () =>
+      el("#premium-dialog").close()
+    );
+    el("#premium-go").addEventListener("click", () => setPremium(true));
+    el("#premium-off").addEventListener("click", () => setPremium(false));
 
     if (state.settings.notifyEnabled) {
       el("#notify-status").textContent =

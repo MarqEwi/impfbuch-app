@@ -2,18 +2,20 @@
 
 importScripts("js/reminders-db.js");
 
-const CACHE = "impfpass-v43";
+const CACHE = "impfpass-v44";
 const ASSETS = [
   "index.html",
   "datenschutz.html",
   "css/styles.css",
   "js/edition.js",
+  "js/icons.js",
   "js/native-bridge.js",
   "js/app.js",
   "js/stiko-data.js",
   "js/travel-data.js",
   "js/reminders-db.js",
   "images/paper.jpg",
+  "images/premium-badge.png",
   "manifest.webmanifest",
   "icons/icon-192.png",
   "icons/icon-512.png",

@@ -1637,11 +1637,13 @@ dialog#quick-dialog::backdrop {
 /* ---------------------------------------------------- Theme-Umschalter */
 .theme-choice {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 10px;
 }
 .theme-btn {
-  flex: 1;
+  flex: 1 1 calc(50% - 4px);
+  min-width: calc(50% - 4px);
   border: 1px solid var(--btn-border);
   background: rgba(255, 255, 255, 0.55);
   color: var(--ink);
@@ -1813,3 +1815,209 @@ dialog#quick-dialog::backdrop {
 :root[data-theme="dark"] .travel-note {
   color: var(--ink-soft);
 }
+
+/* ============================================================ ICON-SYSTEM */
+/* Moderne Linien-Icons (SVG, erben currentColor). */
+.ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+.ic-svg {
+  width: 1.2em;
+  height: 1.2em;
+  display: block;
+  flex-shrink: 0;
+}
+.btn .ic-svg,
+.theme-btn .ic-svg,
+.btn-small .ic-svg {
+  width: 1.15em;
+  height: 1.15em;
+}
+/* Inline im Fließtext (z. B. ✓ in Meldungen) */
+.ic-svg.ic-inline {
+  display: inline-block;
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.15em;
+}
+/* Buttons: Icon + Text sauber zentriert */
+.btn,
+.theme-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ================================================================ PREMIUM */
+.btn-premium {
+  background: linear-gradient(135deg, #f4dd88 0%, #e3b840 100%);
+  border: 1px solid #c99a1e;
+  color: #4a3a00;
+  font-weight: 700;
+}
+.btn-premium:hover {
+  background: linear-gradient(135deg, #f7e49a 0%, #e9c257 100%);
+}
+.btn-premium .ic-svg {
+  color: #7a5a00;
+}
+.btn-premium.is-premium {
+  background: linear-gradient(135deg, #d8ecd8 0%, #a9d9b8 100%);
+  border-color: var(--complete);
+  color: #1f5c3a;
+}
+.btn-premium.is-premium .ic-svg {
+  color: var(--complete);
+}
+
+.premium-head {
+  text-align: center;
+  margin-bottom: 6px;
+}
+.premium-badge {
+  display: block;
+  width: 112px;
+  height: 112px;
+  margin: 0 auto 6px;
+  object-fit: contain;
+}
+.premium-head h3 {
+  margin: 0;
+}
+.premium-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.premium-benefits li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.premium-benefits .ic-svg {
+  width: 20px;
+  height: 20px;
+  color: var(--complete);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.premium-reason {
+  background: rgba(224, 138, 30, 0.1);
+  border: 1px solid var(--soon);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+.premium-reason p {
+  margin: 0 0 6px;
+}
+.premium-reason p:last-child {
+  margin-bottom: 0;
+}
+.premium-active {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(46, 139, 87, 0.12);
+  border: 1px solid var(--complete);
+  color: var(--complete);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+/* „Premium"-Kennzeichen (z. B. an gesperrter Reise-Option) */
+.premium-tag {
+  display: inline-block;
+  font-style: normal;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #f4dd88, #e3b840);
+  color: #4a3a00;
+  padding: 2px 7px;
+  border-radius: 6px;
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+/* Gesperrte Reise-Option (ohne Premium) */
+.travel-toggle.locked {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+.travel-toggle.locked .ic-svg {
+  color: var(--soon);
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* ======================================================= NEUTRALE ANSICHT */
+/* Ruhige, moderne Hell-Ansicht ohne den gelben Impfpass-Look. */
+:root[data-theme="neutral"] {
+  color-scheme: light;
+  --pass-yellow: #7c8aa0;
+  --pass-yellow-dark: #566274;
+  --pass-cream: #f2f4f7;
+  --paper: #ffffff;
+  --ink: #232831;
+  --ink-soft: #5c636e;
+  --line: #e0e4ea;
+  --line-strong: #c6ccd6;
+  --btn-border: rgba(40, 50, 65, 0.26);
+  --btn-shadow: 0 1px 2px rgba(30, 40, 60, 0.1);
+  --btn-shadow-hover: 0 2px 6px rgba(30, 40, 60, 0.14);
+  --shadow: 0 2px 12px rgba(30, 40, 60, 0.1);
+  --stamp-blue: #3f6098;
+}
+:root[data-theme="neutral"] body {
+  background-color: #edeff3;
+  background-image: none;
+}
+:root[data-theme="neutral"] .app-header {
+  color: var(--ink);
+}
+:root[data-theme="neutral"] .pass-cover {
+  background: #ffffff;
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow);
+}
+:root[data-theme="neutral"] .who-title {
+  color: var(--ink);
+}
+:root[data-theme="neutral"] .profile-switch {
+  color: var(--ink);
+  background: #f4f6f8;
+  border-bottom-color: var(--line-strong);
+}
+:root[data-theme="neutral"] .holder-value,
+:root[data-theme="neutral"] .holder-label {
+  color: var(--ink-soft);
+  border-bottom-color: var(--line-strong);
+}
+:root[data-theme="neutral"] .tabs {
+  background: #ffffff;
+}
+:root[data-theme="neutral"] .btn-primary {
+  color: #ffffff;
+}
+:root[data-theme="neutral"] .theme-btn.active,
+:root[data-theme="neutral"] .prof-chip.active {
+  color: #ffffff;
+}
+/* Premium bleibt golden — Marken-Akzent, auch in neutraler Ansicht. */
