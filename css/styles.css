@@ -1344,7 +1344,7 @@ dialog#person-dialog::backdrop {
 }
 :root[data-theme="neutral"] .radio-item:has(input:checked) {
   border-color: var(--pass-yellow-dark);
-  background: rgba(233, 201, 74, 0.16);
+  background: rgba(244, 168, 28, 0.18);
 }
 .tgt-item {
   display: flex !important;
@@ -2032,29 +2032,29 @@ dialog#quick-dialog::backdrop {
    nur heller/gleichmäßig und ohne die kräftige Papiertextur. */
 :root[data-theme="neutral"] {
   color-scheme: light;
-  --pass-yellow: #edd83a;
-  --pass-yellow-dark: #d9be2c;
-  --pass-cream: #f9f0a6;
-  --paper: #fdf9d6;
-  --ink: #2b2b23;
-  --ink-soft: #5c5843;
-  --line: #ded03f;
-  --line-strong: #c7b432;
-  --btn-border: rgba(70, 58, 12, 0.34);
-  --btn-shadow: 0 1px 2px rgba(90, 70, 5, 0.14);
-  --btn-shadow-hover: 0 2px 6px rgba(90, 70, 5, 0.18);
-  --shadow: 0 2px 12px rgba(90, 70, 5, 0.12);
+  --pass-yellow: #f4a81c;
+  --pass-yellow-dark: #e0900f;
+  --pass-cream: #fbe0ac;
+  --paper: #fdedc8;
+  --ink: #2a2318;
+  --ink-soft: #6a5c3d;
+  --line: #e7bd63;
+  --line-strong: #d09f34;
+  --btn-border: rgba(70, 50, 8, 0.36);
+  --btn-shadow: 0 1px 2px rgba(90, 60, 0, 0.16);
+  --btn-shadow-hover: 0 2px 6px rgba(90, 60, 0, 0.2);
+  --shadow: 0 2px 12px rgba(90, 60, 0, 0.14);
   --stamp-blue: #3a5a8c;
 }
 :root[data-theme="neutral"] body {
-  background-color: #eedb35;
+  background-color: #f4a81c;
   background-image: none;
 }
 :root[data-theme="neutral"] .app-header {
   color: var(--ink);
 }
 :root[data-theme="neutral"] .pass-cover {
-  background: #f6e86c;
+  background: #f7b638;
   border-color: var(--line-strong);
   box-shadow: var(--shadow);
 }
@@ -2063,7 +2063,7 @@ dialog#quick-dialog::backdrop {
 }
 :root[data-theme="neutral"] .profile-switch {
   color: var(--ink);
-  background: #faf29a;
+  background: #fadb94;
   border-bottom-color: var(--line-strong);
 }
 :root[data-theme="neutral"] .holder-value,
@@ -2072,6 +2072,6 @@ dialog#quick-dialog::backdrop {
   border-bottom-color: var(--line-strong);
 }
 :root[data-theme="neutral"] .tabs {
-  background: #fdf9d6;
+  background: #fdedc8;
 }
 /* Premium bleibt golden — Marken-Akzent, auch in neutraler Ansicht. */
