@@ -1310,6 +1310,41 @@ dialog#person-dialog::backdrop {
   flex-direction: column;
   gap: 4px;
 }
+/* Backup: Auswahl des Umfangs */
+.backup-scope {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.radio-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.35);
+}
+.radio-item input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.radio-item:has(input:checked) {
+  border-color: var(--pass-yellow-dark);
+  background: rgba(233, 201, 74, 0.14);
+}
+:root[data-theme="dark"] .radio-item,
+:root[data-theme="neutral"] .radio-item {
+  background: rgba(255, 255, 255, 0.05);
+}
+:root[data-theme="neutral"] .radio-item:has(input:checked) {
+  background: rgba(86, 98, 116, 0.12);
+}
 .tgt-item {
   display: flex !important;
   align-items: center;
@@ -1882,8 +1917,8 @@ dialog#quick-dialog::backdrop {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 132px;
-  height: 132px;
+  width: 116px;
+  height: 116px;
   margin: 0 0 8px;
   border-radius: 50%;
   background: radial-gradient(
@@ -1898,8 +1933,8 @@ dialog#quick-dialog::backdrop {
 }
 .premium-badge {
   display: block;
-  width: 96px;
-  height: 96px;
+  width: 104px;
+  height: 104px;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(50, 80, 130, 0.45));
 }

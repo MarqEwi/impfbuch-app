@@ -1774,11 +1774,114 @@
     }
   }
 
+  /* ----------------------------------------------------------------- Backup */
+
+  function openBackup() {
+    // Auswahl auf „Alles" zurücksetzen und Profil-Liste vorbereiten.
+    el("#backup-dialog")
+      .querySelectorAll('input[name="backup-scope"]')
+      .forEach((r) => (r.checked = r.value === "all"));
+    el("#backup-list").innerHTML = state.profiles
+      .map(
+        (p) => `
+        <label class="tgt-item">
+          <input type="checkbox" value="${p.id}" checked />
+          <span>${esc(p.name)}</span>
+        </label>`
+      )
+      .join("");
+    updateBackupScopeUI();
+    el("#backup-dialog").showModal();
+  }
+
+  function selectedBackupScope() {
+    const r = el('#backup-dialog input[name="backup-scope"]:checked');
+    return r ? r.value : "all";
+  }
+
+  // Profil-Auswahl nur bei „Bestimmte Profile" einblenden.
+  function updateBackupScopeUI() {
+    el("#backup-list").classList.toggle(
+      "hidden",
+      selectedBackupScope() !== "some"
+    );
+  }
+
+  function doBackup() {
+    const scope = selectedBackupScope();
+    let ids;
+    let includeSettings = false;
+    if (scope === "all") {
+      ids = state.profiles.map((p) => p.id);
+      includeSettings = true;
+    } else if (scope === "profiles") {
+      ids = state.profiles.map((p) => p.id);
+    } else {
+      ids = [...el("#backup-list").querySelectorAll("input:checked")].map(
+        (i) => i.value
+      );
+      if (!ids.length) return; // nichts gewählt
+    }
+    el("#backup-dialog").close();
+    saveBackup(ids, includeSettings);
+  }
+
+  async function saveBackup(ids, includeSettings) {
+    const profiles = state.profiles.filter((p) => ids.includes(p.id));
+    if (!profiles.length) return;
+    const data = {
+      app: "impfbuch",
+      type: "backup",
+      version: state.version || 2,
+      createdAt: new Date().toISOString(),
+      includesSettings: !!includeSettings,
+      activeProfileId: ids.includes(state.activeProfileId)
+        ? state.activeProfileId
+        : ids[0],
+      profiles,
+    };
+    if (includeSettings) data.settings = state.settings;
+
+    const filename = `impfbuch-backup-${new Date()
+      .toISOString()
+      .slice(0, 10)}.json`;
+    try {
+      await window.NativeBridge.saveTextFile(
+        filename,
+        JSON.stringify(data, null, 2),
+        "application/json"
+      );
+      showMessage(
+        "Backup erstellt",
+        `<p>${svgIcon(
+          "check",
+          "ic-inline"
+        )} Deine Backup-Datei <strong>${esc(filename)}</strong> wurde erstellt${
+          includeSettings ? " — inklusive Einstellungen" : ""
+        }.</p>` +
+          `<p class="hint" style="margin:8px 0 0">Bewahre die Datei sicher auf. Du kannst sie jederzeit über „Importieren" wiederherstellen.</p>`
+      );
+    } catch (e) {
+      console.warn("Backup fehlgeschlagen:", e);
+      showMessage(
+        "Backup fehlgeschlagen",
+        "<p>Die Datei konnte nicht gespeichert/geteilt werden. Bitte versuche es erneut.</p>"
+      );
+    }
+  }
+
   function importData(file) {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = migrate(JSON.parse(reader.result));
+        const parsed = JSON.parse(reader.result);
+        // Vollständiges Backup (unser Format) inkl. Einstellungen?
+        const restoreSettings =
+          parsed &&
+          parsed.app === "impfbuch" &&
+          parsed.includesSettings &&
+          parsed.settings;
+        const data = migrate(parsed);
         const incoming = data.profiles || [];
         if (!incoming.length) throw new Error("Keine Profile in der Datei.");
         // Importierte Personen hinzufügen bzw. bestehende (nach id) ersetzen —
@@ -1790,11 +1893,21 @@
         });
         if (!state.profiles.find((p) => p.id === state.activeProfileId))
           state.activeProfileId = state.profiles[0].id;
+        if (restoreSettings) {
+          // Einstellungen aus dem Backup übernehmen (Theme, Premium,
+          // Erinnerungen, Ersteinrichtung).
+          state.settings = Object.assign({}, state.settings, parsed.settings);
+          if (window.EDITION) window.EDITION.premium = !!state.settings.premium;
+        }
         saveData();
+        applyTheme();
+        renderThemeButtons();
         render();
         showMessage(
-          "✓ Import erfolgreich",
-          `<p>${incoming.length} Person(en) wurden importiert.</p>`
+          "Import erfolgreich",
+          `<p>${svgIcon("check", "ic-inline")} ${incoming.length} Person(en) wurden importiert${
+            restoreSettings ? " — inklusive Einstellungen" : ""
+          }.</p>`
         );
       } catch (err) {
         showMessage(
@@ -2206,6 +2319,14 @@
       if (e.target.files[0]) importData(e.target.files[0]);
       e.target.value = "";
     });
+    el("#btn-backup").addEventListener("click", openBackup);
+    el("#backup-go").addEventListener("click", doBackup);
+    el("#backup-cancel").addEventListener("click", () =>
+      el("#backup-dialog").close()
+    );
+    el("#backup-dialog")
+      .querySelectorAll('input[name="backup-scope"]')
+      .forEach((r) => r.addEventListener("change", updateBackupScopeUI));
     el("#btn-reset").addEventListener("click", resetAll);
     el("#btn-notify").addEventListener("click", askNotifications);
     el("#notify-cancel").addEventListener("click", () =>

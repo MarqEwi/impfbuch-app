@@ -158,6 +158,13 @@
             </button>
           </div>
           <input type="file" id="import-file" accept="application/json" hidden />
+          <button class="btn" id="btn-backup">
+            <span class="ic" data-icon="archive"></span> Backup erstellen
+          </button>
+          <p class="hint">
+            Speichert ausgewählte Profile oder alles inkl. Einstellungen als
+            eine Backup-Datei. Wiederherstellen später über „Importieren".
+          </p>
           <button class="btn btn-danger" id="btn-reset">
             <span class="ic" data-icon="trash"></span> Alle Daten löschen
           </button>
@@ -543,6 +550,35 @@
       </div>
     </dialog>
 
+    <!-- Dialog: Backup erstellen -->
+    <dialog id="backup-dialog">
+      <div class="info-content">
+        <h3>Backup erstellen</h3>
+        <p class="hint" style="margin-top: 0">
+          Wähle, was in der Backup-Datei gespeichert werden soll:
+        </p>
+        <div class="backup-scope">
+          <label class="radio-item">
+            <input type="radio" name="backup-scope" value="all" checked />
+            <span><strong>Alles</strong> — alle Profile und Einstellungen</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="backup-scope" value="profiles" />
+            <span><strong>Alle Profile</strong> — ohne Einstellungen</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="backup-scope" value="some" />
+            <span><strong>Bestimmte Profile</strong> auswählen</span>
+          </label>
+        </div>
+        <div id="backup-list" class="target-list hidden"></div>
+        <div class="dlg-actions">
+          <button type="button" class="btn btn-ghost" id="backup-cancel">Abbrechen</button>
+          <button type="button" class="btn btn-primary" id="backup-go">Backup speichern</button>
+        </div>
+      </div>
+    </dialog>
+
     <!-- Dialog: Löschen (mit „ganzer Tag"-Option) -->
     <dialog id="delete-dialog">
       <div class="info-content">
@@ -574,7 +610,7 @@
         </button>
         <div class="premium-head">
           <span class="premium-badge-frame">
-            <img class="premium-badge" src="images/premium-badge.png" alt="" width="96" height="96" />
+            <img class="premium-badge" src="images/premium-badge.png" alt="" width="104" height="104" />
           </span>
           <h3>Impfbuch Premium</h3>
         </div>
