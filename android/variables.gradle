@@ -1,8 +1,9 @@
 ext {
-    // minSdk 21: Die frühere (TWA-)Version unterstützte API 21 — eine höhere
-    // Mindestversion würde der Play-Console-Upload als "vorhandene Nutzer
-    // können kein Upgrade durchführen" blockieren. targetSdk bleibt 36!
-    minSdkVersion = 21
+    // minSdk 24: Das Google-Mobile-Ads-SDK (AdMob) verlangt mindestens API 24.
+    // Damit können Geräte unter Android 7 (unter 1 % Marktanteil) die App nicht
+    // mehr aktualisieren — bewusst in Kauf genommen, um Werbung einzubinden.
+    // targetSdk bleibt 36!
+    minSdkVersion = 24
     compileSdkVersion = 36
     targetSdkVersion = 36
     androidxActivityVersion = '1.11.0'

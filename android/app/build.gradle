@@ -7,9 +7,10 @@ android {
         applicationId "io.github.marqewi.impfbuch"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // Höher als ALLE bisherigen Play-Uploads (TWA: versionCode 1 und 2)
-        versionCode 3
-        versionName "2.0.0"
+        // Höher als ALLE bisherigen Play-Uploads (TWA: versionCode 1 und 2;
+        // Capacitor-Start: 3). Bei JEDEM Play-Upload erhöhen (Learning F24).
+        versionCode 4
+        versionName "2.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

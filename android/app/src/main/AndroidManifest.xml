@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
-    <!-- minSdk 21 liegt unter der Mindestversion einiger Bibliotheken; die
+    <!-- Einige Bibliotheken deklarieren eigene Mindestversionen; die
          betroffenen Namespaces werden hier bewusst übersteuert (Manifest-
          Merger). Meldet Android Studio weitere Namespaces an, einfach
          kommagetrennt ergänzen. -->
@@ -33,6 +33,14 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- AdMob-App-ID (Learning C9): ohne diesen Eintrag stürzt die App beim
+             Start ab. AKTUELL die Google-TEST-App-ID. Vor der Veröffentlichung
+             durch die echte AdMob-App-ID ersetzen (und in js/monetize-config.js
+             ADS_TESTING auf false + echte Banner-ID setzen). -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
     </application>
 
     <!-- Permissions -->
