@@ -12,11 +12,13 @@ window.MONETIZE = {
 
   // AdMob-App-ID kommt ins AndroidManifest (Learning C9), NICHT hierher.
   //   Test-App-ID:  ca-app-pub-3940256099942544~3347511713
-  //   Echte App-ID: <deine App-ID>  → im Manifest eintragen
+  //   Echte App-ID: ca-app-pub-7311552668399418~3802208270
+  //     (MERCwerk / Impfbuch — beim Release im Manifest eintragen)
 
   // Banner-Anzeigenblock-IDs (Android)
   BANNER_ID_TEST: "ca-app-pub-3940256099942544/6300978111",
-  BANNER_ID_REAL: "", // TODO: echte Banner-ID hier eintragen
+  // Echte Banner-ID (hinterlegt, aber erst aktiv bei ADS_TESTING: false):
+  BANNER_ID_REAL: "ca-app-pub-7311552668399418/8655079709",
 
   bannerId() {
     return this.ADS_TESTING ? this.BANNER_ID_TEST : this.BANNER_ID_REAL;
