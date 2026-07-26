@@ -82,7 +82,14 @@
         await AdMob.initialize({
           initializeForTesting: !!(window.MONETIZE && window.MONETIZE.ADS_TESTING),
         });
-        await this.requestConsent(AdMob);
+        const mayShow = await this.requestConsent(AdMob);
+        if (!mayShow) {
+          // Nutzer hat die Einwilligung verweigert (DSGVO): KEINE Werbung.
+          // Die App läuft normal weiter, unten steht der dezente Hinweis.
+          this.showPlaceholder();
+          diag("keine Einwilligung → Werbung aus");
+          return;
+        }
         this.attachListeners(AdMob);
         await this.showBanner(AdMob);
       } catch (e) {
@@ -94,19 +101,36 @@
     // UMP / DSGVO (Learning D14–D16)
     async requestConsent(AdMob) {
       try {
-        const info = await AdMob.requestConsentInfo();
+        let info = await AdMob.requestConsentInfo();
+        if (info && info.status === "REQUIRED" && info.isConsentFormAvailable) {
+          // Einwilligungsformular zeigen; danach den Status neu einlesen,
+          // denn erst dann steht fest, ob der Nutzer zugestimmt hat.
+          await AdMob.showConsentForm();
+          try {
+            info = await AdMob.requestConsentInfo();
+          } catch (e) {
+            /* alten Stand weiterverwenden */
+          }
+        }
         this.privacyOptionsRequired =
           info && info.privacyOptionsRequirementStatus === "REQUIRED";
-        if (info && info.status === "REQUIRED" && info.isConsentFormAvailable) {
-          await AdMob.showConsentForm();
-        }
         this.consentDone = true;
         // Karte „Werbe-Einstellungen ändern" nur zeigen, wenn nötig.
         const card = document.getElementById("ad-privacy-card");
         if (card) card.classList.toggle("hidden", !this.privacyOptionsRequired);
+
+        /*
+         * DSGVO (Learning D14): Nur wenn der Nutzer eingewilligt hat, darf
+         * Werbung geladen werden. Meldet die Bibliothek canRequestAds ===
+         * false, bleibt die Werbung aus — die App funktioniert normal weiter.
+         * Ältere Plugin-Fassungen liefern das Feld nicht; dann nicht blockieren.
+         */
+        if (info && info.canRequestAds === false) return false;
+        return true;
       } catch (e) {
-        // Einwilligung fehlgeschlagen → Werbung einfach aus lassen.
-        diag("Einwilligung übersprungen: " + (e && e.message ? e.message : e));
+        // Einwilligung fehlgeschlagen → im Zweifel keine Werbung laden.
+        diag("Einwilligung fehlgeschlagen: " + (e && e.message ? e.message : e));
+        return false;
       }
     },
 
