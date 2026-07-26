@@ -1,23 +1,24 @@
 /*
  * Zentrale Konfiguration für Werbung (AdMob) und Premium-Kauf.
  *
- * WICHTIG (Learning C10): Während der Entwicklung IMMER Test-IDs verwenden.
- * Erst ganz zum Schluss ADS_TESTING auf false setzen und die echten IDs
- * eintragen. Niemals die eigenen (Test-)Anzeigen anklicken (Learning C13).
+ * ---------------------------------------------------------------------------
+ * STAND: VERÖFFENTLICHUNG (scharf geschaltet).
+ * Es laufen ECHTE Anzeigen. Niemals selbst auf Anzeigen tippen — Google
+ * wertet das als Klickbetrug und sperrt AdMob-Konten (Learning C13).
+ * Zum Weiterentwickeln vorübergehend ADS_TESTING/DIAG/DEV_UNLOCK auf true.
+ * ---------------------------------------------------------------------------
  */
 window.MONETIZE = {
   /* ------------------------------------------------------------- Werbung */
-  // true = Google-Test-Anzeigen. Zum Schluss auf false umstellen.
-  ADS_TESTING: true,
+  // false = ECHTE Anzeigen (Release). true = Google-Test-Anzeigen.
+  ADS_TESTING: false,
 
-  // AdMob-App-ID kommt ins AndroidManifest (Learning C9), NICHT hierher.
-  //   Test-App-ID:  ca-app-pub-3940256099942544~3347511713
-  //   Echte App-ID: ca-app-pub-7311552668399418~3802208270
-  //     (MERCwerk / Impfbuch — beim Release im Manifest eintragen)
+  // AdMob-App-ID steht im AndroidManifest (Learning C9), NICHT hier.
+  //   Aktiv im Manifest: ca-app-pub-7311552668399418~3802208270 (echt)
+  //   Test-App-ID (nur zum Entwickeln): ca-app-pub-3940256099942544~3347511713
 
   // Banner-Anzeigenblock-IDs (Android)
   BANNER_ID_TEST: "ca-app-pub-3940256099942544/6300978111",
-  // Echte Banner-ID (hinterlegt, aber erst aktiv bei ADS_TESTING: false):
   BANNER_ID_REAL: "ca-app-pub-7311552668399418/8655079709",
 
   bannerId() {
@@ -33,7 +34,14 @@ window.MONETIZE = {
   // Anzeigepreis, falls der Store (noch) keinen echten Preis liefert.
   PRICE_FALLBACK: "2,99 €",
 
-  /* ----------------------------------------------------------- Diagnose */
-  // Statuszeile in „Über diese App" anzeigen. Vor Release auf false.
-  DIAG: true,
+  /* -------------------------------------------------- Entwickler-Schalter */
+  // Diagnose-Statuszeile in „Über diese App". Im Release aus (Learning G25).
+  DIAG: false,
+  /*
+   * Test-Freischaltung von Premium ohne echten Kauf (Browser-Vorschau) und
+   * der Knopf „Premium deaktivieren". Im Release AUS: sonst könnten Käufer
+   * ihr Premium versehentlich abschalten und die Web-Version würde Premium
+   * verschenken.
+   */
+  DEV_UNLOCK: false,
 };

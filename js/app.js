@@ -2004,9 +2004,11 @@
     // Preis anzeigen (echter Store-Preis oder Fallback).
     const priceEl = el("#premium-price");
     if (priceEl && window.Purchase) priceEl.textContent = window.Purchase.price();
-    // Kauf-Button nur ohne Premium; „deaktivieren" nur mit (Test-Schalter).
+    // Kauf-Button nur ohne Premium. „Premium deaktivieren" ist ein reiner
+    // Entwickler-Schalter und im Release komplett ausgeblendet.
+    const devUnlock = !!(window.MONETIZE && window.MONETIZE.DEV_UNLOCK);
     el("#premium-go").classList.toggle("hidden", active);
-    el("#premium-off").classList.toggle("hidden", !active);
+    el("#premium-off").classList.toggle("hidden", !active || !devUnlock);
     // „Käufe wiederherstellen" nur nativ und nur solange nicht Premium.
     el("#premium-restore").classList.toggle("hidden", active || !native);
     el("#premium-dialog").showModal();
@@ -2423,9 +2425,17 @@
     el("#premium-close").addEventListener("click", () =>
       el("#premium-dialog").close()
     );
-    // Kauf (nativ) bzw. Test-Freischaltung (Browser) — läuft über Purchase.
-    el("#premium-go").addEventListener("click", () => {
-      if (window.Purchase) window.Purchase.buy();
+    // Kauf — läuft über Purchase (nativ: Google Play).
+    el("#premium-go").addEventListener("click", async () => {
+      if (!window.Purchase) return;
+      const r = await window.Purchase.buy();
+      if (r && r.unavailable) {
+        el("#premium-dialog").close();
+        showMessage(
+          "Nur in der App erhältlich",
+          "<p>Premium kann nur in der Android-App aus dem Google Play Store gekauft werden.</p>"
+        );
+      }
     });
     // Test-Schalter zum Deaktivieren (nur solange kein echter Kauf aktiv ist).
     el("#premium-off").addEventListener("click", () => {

@@ -35,13 +35,12 @@
         </provider>
 
         <!-- AdMob-App-ID (Learning C9): ohne diesen Eintrag stürzt die App beim
-             Start ab. AKTUELL die Google-TEST-App-ID.
-             Vor der Veröffentlichung ersetzen durch die echte App-ID:
-               ca-app-pub-7311552668399418~3802208270
-             (und in js/monetize-config.js ADS_TESTING auf false setzen). -->
+             Start ab. ECHTE App-ID (MERCwerk / Impfbuch) — Release-Stand.
+             Zum Entwickeln ggf. auf die Test-App-ID zurückstellen:
+               ca-app-pub-3940256099942544~3347511713 -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-7311552668399418~3802208270" />
     </application>
 
     <!-- Permissions -->

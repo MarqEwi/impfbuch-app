@@ -125,10 +125,15 @@
           return { error: true };
         }
       }
-      // Browser-Test: lokal freischalten
-      window.Edition.set("premium");
-      diag("Test-Freischaltung (Browser)");
-      return { test: true };
+      // Ohne Store (Browser/Web): nur im Entwicklermodus lokal freischalten.
+      // Im Release gibt es Premium ausschließlich über den echten Kauf.
+      if (cfg().DEV_UNLOCK) {
+        window.Edition.set("premium");
+        diag("Test-Freischaltung (Browser)");
+        return { test: true };
+      }
+      diag("Kauf nur in der App möglich");
+      return { unavailable: true };
     },
 
     async restore() {
