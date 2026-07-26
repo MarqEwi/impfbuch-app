@@ -1945,6 +1945,7 @@
   const global = self;
 
   async function persistDueToDB() {
+    scheduleRemindersSoon(); // Planung an den aktuellen Impfstand anpassen
     if (!global.ReminderDB) return;
     try {
       await global.ReminderDB.set("due", {
@@ -1954,6 +1955,18 @@
     } catch (e) {
       /* IndexedDB evtl. nicht verfügbar — nicht kritisch */
     }
+  }
+
+  // Neuplanung gebündelt: render() läuft oft, das Planen soll aber nur einmal
+  // nach der letzten Änderung passieren.
+  let reminderTimer = null;
+  function scheduleRemindersSoon() {
+    if (!state.settings || !state.settings.notifyEnabled) return;
+    clearTimeout(reminderTimer);
+    reminderTimer = setTimeout(async () => {
+      const res = await syncReminders();
+      renderNotifyStatus(res);
+    }, 1500);
   }
 
   // App-gestylter Meldungs-Dialog (Ersatz für hässliche Browser-Alerts).
@@ -2041,91 +2054,112 @@
   }
 
   async function enableNotifications() {
-    if (!("Notification" in window)) {
+    const perm = await window.Notify.requestPermission();
+    if (perm === "unsupported") {
       showMessage(
         "Nicht unterstützt",
-        "<p>Dieser Browser unterstützt leider keine Benachrichtigungen.</p>"
+        "<p>Dieses Gerät unterstützt leider keine Benachrichtigungen.</p>"
       );
       return;
     }
-    const perm = await Notification.requestPermission();
     if (perm !== "granted") {
       showMessage(
         "Benachrichtigungen nicht erlaubt",
         "<p>Kein Problem — so schaltest du sie frei:</p>" +
           "<ol>" +
-          "<li>App-Icon <strong>lange drücken</strong> → <strong>ⓘ App-Info</strong> → <strong>Benachrichtigungen zulassen</strong></li>" +
+          "<li>App-Icon <strong>lange drücken</strong> → <strong>ⓘ App-Info</strong> → <strong>Benachrichtigungen</strong> → <strong>zulassen</strong></li>" +
           "<li>Danach hier erneut auf „Benachrichtigungen aktivieren“ tippen</li>" +
-          "</ol>" +
-          "<p>Falls es dann noch nicht klappt: In Chrome unter <em>Einstellungen → Website-Einstellungen → Benachrichtigungen</em> die Blockierung für diese Seite aufheben.</p>"
+          "</ol>"
       );
       return;
     }
     state.settings.notifyEnabled = true;
     saveData();
     await persistDueToDB();
-    const bg = await registerPeriodicSync();
-    checkAndNotify(true);
-    el("#notify-status").textContent = bg
-      ? "✓ Aktiviert — inkl. täglicher Hintergrundprüfung."
-      : "✓ Aktiviert — Erinnerung beim Öffnen der App. (Hintergrundprüfung wird von diesem Browser nicht unterstützt.)";
+    const res = await syncReminders();
+    renderNotifyStatus(res);
     showMessage(
-      "🔔 Erinnerungen aktiv",
-      "<p>Alles eingerichtet! Die App meldet sich, sobald bei einer Person eine Impfung fällig ist.</p>"
+      "Erinnerungen aktiv",
+      `<p>${svgIcon("check", "ic-inline")} Alles eingerichtet!</p>` +
+        (res && res.scheduled
+          ? `<p>Es sind <strong>${res.scheduled} Erinnerung(en)</strong> eingeplant — sie kommen automatisch am Fälligkeitstag, auch wenn die App geschlossen ist.</p>`
+          : "<p>Sobald eine Impfung fällig wird, meldet sich die App.</p>")
     );
   }
 
-  // Registriert Periodic Background Sync (nur installierte Chromium-PWAs).
-  async function registerPeriodicSync() {
+  /*
+   * Plant die Erinnerungen neu. Wird beim Start und nach jeder Datenänderung
+   * aufgerufen, damit die geplanten Termine immer zum aktuellen Impfstand
+   * passen (z. B. nach dem Eintragen einer Impfung).
+   */
+  async function syncReminders() {
     try {
-      if (!("serviceWorker" in navigator)) return false;
-      const reg = await navigator.serviceWorker.ready;
-      if (!("periodicSync" in reg)) return false;
-      const status = await navigator.permissions.query({
-        name: "periodic-background-sync",
-      });
-      if (status.state !== "granted") return false;
-      await reg.periodicSync.register("impf-check", {
-        minInterval: 24 * 60 * 60 * 1000,
-      });
-      return true;
+      if (!state.settings.notifyEnabled) return null;
+      if (!(await window.Notify.hasPermission())) return null;
+      return await window.Notify.schedule(upcomingForReminders());
     } catch (e) {
-      return false;
+      console.warn("Erinnerungen konnten nicht geplant werden:", e);
+      return null;
     }
   }
 
-  // Erinnerung beim App-Start, wenn etwas fällig/überfällig ist.
-  // Darf die App unter keinen Umständen lahmlegen — daher komplett abgesichert.
+  // Alle künftig fälligen Impfungen aller Personen (inkl. überfälliger).
+  function upcomingForReminders() {
+    const out = [];
+    for (const p of state.profiles) {
+      for (const item of computeDueItems(p)) {
+        if (displayStateFor(item.vaccine, p) !== "shown") continue;
+        if (!item.next || !item.next.dueDate) continue;
+        if (!["overdue", "soon", "future"].includes(item.status)) continue;
+        out.push({
+          profile: p.name,
+          vaccine: item.vaccine.name,
+          dueDate: item.next.dueDate.toISOString().slice(0, 10),
+          status: item.status,
+        });
+      }
+    }
+    return out;
+  }
+
+  function renderNotifyStatus(res) {
+    const e = el("#notify-status");
+    if (!e) return;
+    if (!state.settings.notifyEnabled) {
+      e.textContent =
+        "Erinnert an fällige Impfungen aller Personen — automatisch am Fälligkeitstag.";
+      return;
+    }
+    if (res && res.scheduled)
+      e.textContent = `Aktiviert — ${res.scheduled} Erinnerung(en) eingeplant.`;
+    else if (res && res.mode === "beim Öffnen")
+      e.textContent =
+        "Aktiviert — Hinweis beim Öffnen der App (dieser Browser kann nicht im Hintergrund erinnern).";
+    else e.textContent = "Aktiviert — es steht derzeit keine Impfung an.";
+  }
+
+  // Beim App-Start: überfällige Impfungen sofort melden (nur einmal täglich).
   async function checkAndNotify(force) {
     try {
       if (!state.settings.notifyEnabled && !force) return;
-      if (!("Notification" in window) || Notification.permission !== "granted")
-        return;
+      if (!(await window.Notify.hasPermission())) return;
       const due = computeDueAcrossProfiles();
       if (!due.length) return;
+      const today = new Date().toISOString().slice(0, 10);
+      if (!force && state.settings.lastNotified === today) return;
       const names = due
         .map((d) => `${d.vaccine} (${d.profile})`)
         .slice(0, 3)
         .join(", ");
-      const title = "Impfbuch — fällige Impfungen";
-      const opts = {
-        body: `${due.length} Impfung(en) anstehend: ${names}${
+      const ok = await window.Notify.showNow(
+        "Impfbuch — fällige Impfungen",
+        `${due.length} Impfung(en) anstehend: ${names}${
           due.length > 3 ? " …" : ""
-        }`,
-        icon: "icons/icon-192.png",
-        badge: "icons/icon-192.png",
-        tag: "impf-due",
-      };
-      // Android-Chrome erlaubt den Notification-Konstruktor nicht —
-      // dort muss die Anzeige über den Service Worker laufen.
-      const reg =
-        "serviceWorker" in navigator
-          ? await navigator.serviceWorker.getRegistration()
-          : null;
-      if (reg && reg.showNotification) {
-        await reg.showNotification(title, opts);
-      } else {
-        new Notification(title, opts);
+        }`
+      );
+      if (ok) {
+        state.settings.lastNotified = today;
+        saveData();
       }
     } catch (e) {
       console.warn("Benachrichtigung fehlgeschlagen:", e);
@@ -2405,14 +2439,20 @@
     });
     document.addEventListener("edition:changed", onEditionChanged);
 
-    if (state.settings.notifyEnabled) {
-      el("#notify-status").textContent =
-        "Benachrichtigungen sind aktiviert.";
-    }
+    renderNotifyStatus(null);
 
     render();
     maybeStartSetup();
     setTimeout(() => checkAndNotify(false), 800);
+
+    // Erinnerungen: Android-Kanal anlegen und Planung auffrischen (Termine
+    // können sich seit dem letzten Start verschoben haben).
+    if (window.Notify) {
+      window.Notify.init().then(async () => {
+        const res = await syncReminders();
+        renderNotifyStatus(res);
+      });
+    }
 
     // Monetarisierung starten: Edition aus gespeichertem Zustand übernehmen
     // (silent = ohne Event-Schleife), dann Kauf- und Werbe-Module initialisieren.
