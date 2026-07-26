@@ -1938,36 +1938,20 @@ dialog#quick-dialog::backdrop {
   text-align: center;
   margin-bottom: 6px;
 }
+/* Diamant steht frei — kein Kreis, kein Rahmen. */
 .premium-badge-frame {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 116px;
-  height: 116px;
-  margin: 0 0 8px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 50% 42%,
-    #fdfdff 0%,
-    #eaeff5 68%,
-    #dee5ee 100%
-  );
-  border: 1px solid var(--line-strong);
-  box-shadow: 0 6px 18px rgba(30, 40, 60, 0.2),
-    inset 0 1px 2px rgba(255, 255, 255, 0.75);
+  margin: 0 0 10px;
 }
 .premium-badge {
   display: block;
   width: 92px;
   height: 84px;
-  filter: drop-shadow(0 2px 3px rgba(30, 40, 70, 0.35));
+  filter: drop-shadow(0 3px 5px rgba(30, 40, 70, 0.28));
 }
 /* Dunkle Ansicht: helles Medaillon hebt sich klar vom Dialog ab */
-:root[data-theme="dark"] .premium-badge-frame {
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55),
-    inset 0 1px 2px rgba(255, 255, 255, 0.5);
-}
 .premium-head h3 {
   margin: 0;
 }
