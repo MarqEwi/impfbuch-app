@@ -29,6 +29,17 @@
    * rutschen ferne Termine automatisch rechtzeitig in den Horizont.
    */
   const HORIZON_MONTHS = 24;
+  /*
+   * Erinnerungs-Rhythmus je Impfung, in Tagen NACH dem Fälligkeitstermin.
+   * Entscheidend: Die Termine werden immer aus dem FESTEN Fälligkeitsdatum
+   * berechnet — nie aus „heute". Dadurch ergibt jede Neuplanung exakt
+   * dieselben Termine, egal wie oft die App geöffnet wird. Früher wurde
+   * Überfälliges bei jedem Start auf „morgen" gelegt → tägliche Meldung.
+   */
+  const FOLLOW_UP_DAYS = [0, 30, 90, 180, 365, 730];
+  // Höchstens so viele Erinnerungen pro Impfung (danach nur noch im
+  // „Fällig"-Tab sichtbar, ohne Meldung).
+  const MAX_PER_ITEM = 3;
 
   function isNative() {
     return !!(window.NativeBridge && window.NativeBridge.isNative());
@@ -252,31 +263,63 @@
 
   // Fällige Impfungen nach Datum bündeln → eine Meldung pro Tag statt Spam.
   function groupByDate(items) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const horizon = new Date();
+    horizon.setMonth(horizon.getMonth() + HORIZON_MONTHS);
     const map = new Map();
 
     for (const it of items) {
       if (!it || !it.dueDate) continue;
-      const at = atHour(it.dueDate);
-      if (!at) continue;
-      // Vergangene Termine: nicht in die Vergangenheit planen. Überfällige
-      // werden gesammelt auf morgen gelegt (einmalige Nachfassung).
-      const key = at.getTime() <= Date.now() ? tomorrowKey() : it.dueDate;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key).push(it);
+      // Feste Termine aus dem Fälligkeitsdatum ableiten (siehe FOLLOW_UP_DAYS)
+      for (const at of reminderDatesFor(it.dueDate, horizon.getTime())) {
+        const key = isoOf(at);
+        if (!map.has(key)) map.set(key, []);
+        // Dieselbe Impfung nie zweimal am selben Tag melden.
+        if (!map.get(key).some((x) => x === it)) map.get(key).push(it);
+      }
     }
-
-    const horizon = new Date();
-    horizon.setMonth(horizon.getMonth() + HORIZON_MONTHS);
 
     return [...map.entries()]
       .map(([date, list]) => ({ date, at: atHour(date), list }))
-      .filter(
-        (g) =>
-          g.at && g.at.getTime() > Date.now() && g.at.getTime() <= horizon.getTime()
-      )
+      .filter((g) => g.at)
       .sort((a, b) => a.at - b.at);
+  }
+
+  /*
+   * Liefert die künftigen Erinnerungstermine für EINE Impfung: Fälligkeitstag
+   * und ein paar sanfte Nachfassungen — höchstens MAX_PER_ITEM Stück. Bereits
+   * verstrichene Termine fallen weg, deshalb bekommt eine seit Langem
+   * überfällige Impfung nur noch vereinzelte (statt täglicher) Hinweise.
+   */
+  function reminderDatesFor(isoDue, horizonTime) {
+    const base = atHour(isoDue);
+    if (!base) return [];
+    const now = Date.now();
+    const out = [];
+    for (const days of FOLLOW_UP_DAYS) {
+      const t = new Date(base);
+      t.setDate(t.getDate() + days);
+      if (t.getTime() > now && t.getTime() <= horizonTime) out.push(t);
+      if (out.length >= MAX_PER_ITEM) break;
+    }
+
+    /*
+     * Liegt der Termin schon so lange zurück, dass alle Nachfassungen
+     * verstrichen sind (z. B. seit Jahren überfällig), bliebe es sonst
+     * komplett still. Dann einmal jährlich am Jahrestag sanft erinnern —
+     * ebenfalls fest berechnet, also höchstens eine Meldung pro Jahr.
+     */
+    if (!out.length) {
+      const next = new Date(base);
+      next.setFullYear(new Date().getFullYear());
+      if (next.getTime() <= now) next.setFullYear(next.getFullYear() + 1);
+      if (next.getTime() <= horizonTime) out.push(next);
+    }
+    return out;
+  }
+
+  function isoOf(d) {
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
   }
 
   function atHour(isoDate) {
@@ -292,12 +335,6 @@
       0
     );
     return isNaN(d.getTime()) ? null : d;
-  }
-
-  function tomorrowKey() {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
   }
 
   function bodyFor(group) {

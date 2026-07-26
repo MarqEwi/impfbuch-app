@@ -2139,14 +2139,21 @@
   }
 
   // Beim App-Start: überfällige Impfungen sofort melden (nur einmal täglich).
+  /*
+   * Hinweis beim Öffnen der App — NUR im Web. In der nativen App wäre er
+   * doppelt und lästig: dort sind echte Erinnerungen auf die Fälligkeits-
+   * termine eingeplant, und wer die App gerade offen hat, sieht den
+   * „Fällig"-Tab ohnehin. Höchstens einmal pro Tag.
+   */
   async function checkAndNotify(force) {
     try {
+      if (window.NativeBridge && window.NativeBridge.isNative()) return;
       if (!state.settings.notifyEnabled && !force) return;
       if (!(await window.Notify.hasPermission())) return;
       const due = computeDueAcrossProfiles();
       if (!due.length) return;
       const today = new Date().toISOString().slice(0, 10);
-      if (!force && state.settings.lastNotified === today) return;
+      if (state.settings.lastNotified === today) return;
       const names = due
         .map((d) => `${d.vaccine} (${d.profile})`)
         .slice(0, 3)
