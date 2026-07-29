@@ -2,7 +2,7 @@
 
 importScripts("js/reminders-db.js");
 
-const CACHE = "impfpass-v61";
+const CACHE = "impfpass-v62";
 const ASSETS = [
   "index.html",
   "datenschutz.html",

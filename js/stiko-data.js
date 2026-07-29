@@ -24,11 +24,11 @@ const MONTH = 1;
 const YEAR = 12;
 
 const GROUPS = {
-  basis: { label: "Grundimmunisierung (ab Säuglingsalter)", color: "#c0392b" },
-  kind: { label: "Kindesalter", color: "#e67e22" },
+  basis: { label: "Grundimmunisierung (ab Säuglingsalter)", color: "#a62d20" },
+  kind: { label: "Kindesalter", color: "#b35c09" },
   jugend: { label: "Jugendalter", color: "#8e44ad" },
   senior: { label: "Ab 60 Jahren", color: "#2c3e50" },
-  indikation: { label: "Indikations-/Reiseimpfung", color: "#7f8c8d" },
+  indikation: { label: "Indikations-/Reiseimpfung", color: "#5b6768" },
   speziell: { label: "Spezielle Impfungen (Reise & Beruf)", color: "#6d4c41" },
 };
 
