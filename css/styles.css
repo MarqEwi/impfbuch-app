@@ -1767,6 +1767,28 @@ dialog#quick-dialog::backdrop {
 .details-body strong {
   color: var(--ink);
 }
+/* Behörden-Klarstellung (Play-Richtlinie „irreführende Behauptungen") */
+.notice-gov {
+  background: rgba(58, 90, 140, 0.1);
+  border-left: 4px solid var(--stamp-blue);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px !important;
+}
+/* Liste der amtlichen Originalquellen */
+.source-list {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+.source-list li {
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+.source-list a {
+  word-break: break-word;
+}
 
 /* ============================================================ DARK MODE */
 :root[data-theme="dark"] {
