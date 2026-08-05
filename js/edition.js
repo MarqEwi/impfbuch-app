@@ -28,11 +28,15 @@
     // initialisierung aus dem gespeicherten Zustand).
     set(flavor, silent) {
       const premium = flavor === "premium";
+      // Keine echte Änderung → nichts melden. Wichtig: Google Play liefert
+      // den Kauf bei JEDEM App-Start erneut als „approved" — ohne diesen
+      // Guard erschien darum bei jedem Start die „Premium aktiv"-Meldung.
+      const unchanged = window.EDITION.premium === premium;
       window.EDITION.flavor = premium ? "premium" : "free";
       window.EDITION.premium = premium;
       window.EDITION.adsEnabled = !premium;
       if (window.Diag) window.Diag.set("edition", window.EDITION.flavor);
-      if (!silent) {
+      if (!silent && !unchanged) {
         document.dispatchEvent(
           new CustomEvent("edition:changed", {
             detail: { flavor: window.EDITION.flavor },
