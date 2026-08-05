@@ -2086,6 +2086,11 @@ body {
   font-size: 0.82rem;
   color: var(--ink-soft);
 }
+/* Beim Tippen ausblenden: die Leiste würde sonst mit dem schrumpfenden
+   Fenster nach oben springen und das Eingabefeld verdecken. */
+body.keyboard-open .ad-bar {
+  display: none;
+}
 .ad-bar-text {
   flex: 1;
   min-width: 0;

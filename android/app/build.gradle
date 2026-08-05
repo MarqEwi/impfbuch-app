@@ -9,8 +9,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Höher als ALLE bisherigen Play-Uploads (TWA: 1 und 2; Capacitor: 3;
         // erster 2.1.0-Build: 4). Bei JEDEM Play-Upload erhöhen (Learning F24).
-        versionCode 9
-        versionName "2.1.1"
+        versionCode 10
+        versionName "2.1.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

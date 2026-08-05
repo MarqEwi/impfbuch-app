@@ -31,14 +31,35 @@
     if (window.Diag) window.Diag.set("ads", msg);
   }
 
+  /*
+   * Reserviert den Platz für die Platzhalter-Leiste. Bewusst mehrfach: allein
+   * auf requestAnimationFrame ist kein Verlass — startet die App im
+   * Hintergrund, läuft kein Frame, die Höhe bliebe 0 und die Leiste würde den
+   * untersten Inhalt überdecken.
+   */
+  function reserveBarHeight() {
+    const apply = () => {
+      const bar = document.getElementById("ad-bar");
+      if (!bar || bar.classList.contains("hidden")) return;
+      if (window.Ads && window.Ads.keyboardOpen) return;
+      const h = bar.offsetHeight;
+      if (h > 0) setReservedHeight(h);
+    };
+    apply(); // sofort, falls bereits vermessbar
+    requestAnimationFrame(apply); // nach dem nächsten Layout
+    setTimeout(apply, 300); // Rückfall ohne laufende Frames
+  }
+
   const Ads = {
     started: false,
     nativeBannerVisible: false,
     consentDone: false,
     privacyOptionsRequired: false,
+    keyboardOpen: false,
 
     // Einstieg — wird von app.js nach dem Seeden der Edition aufgerufen.
     async init() {
+      this.watchKeyboard();
       if (isPremium()) {
         await this.teardown();
         diag("aus (Premium)");
@@ -49,6 +70,65 @@
       } else {
         this.showPlaceholder();
         diag("Platzhalter (Web/Testvorschau)");
+      }
+    },
+
+    /* ------------------------------------------------------------ Tastatur */
+    /*
+     * Beim Tippen ist unten kein Platz für Werbung: Die Leiste ist am unteren
+     * Rand verankert, das Fenster schrumpft aber, sobald die Tastatur aufgeht
+     * — die Werbung sprang dadurch nach oben und verdeckte das Eingabefeld.
+     * Solange ein Textfeld den Fokus hat, wird die Werbung daher ausgeblendet
+     * und der reservierte Platz freigegeben.
+     */
+    watchKeyboard() {
+      if (this._kbWatch) return;
+      this._kbWatch = true;
+      const isText = (el) =>
+        !!el &&
+        (el.tagName === "TEXTAREA" ||
+          (el.tagName === "INPUT" &&
+            !["checkbox", "radio", "button", "submit", "file"].includes(el.type)));
+
+      document.addEventListener("focusin", (e) => {
+        if (isText(e.target)) this.setKeyboardOpen(true);
+      });
+      document.addEventListener("focusout", () => {
+        // kurz warten: beim Wechsel zwischen zwei Feldern bleibt die Tastatur
+        setTimeout(() => {
+          if (!isText(document.activeElement)) this.setKeyboardOpen(false);
+        }, 120);
+      });
+    },
+
+    setKeyboardOpen(open) {
+      if (this.keyboardOpen === open) return;
+      this.keyboardOpen = open;
+      document.body.classList.toggle("keyboard-open", open);
+      const bar = document.getElementById("ad-bar");
+      if (open) {
+        this._savedHeight = getComputedStyle(document.documentElement)
+          .getPropertyValue("--ad-height")
+          .trim();
+        setReservedHeight(0);
+      } else if (!isPremium()) {
+        // Platz nur zurückgeben, wenn wieder etwas angezeigt wird
+        if (this.nativeBannerVisible) {
+          const h = parseInt(this._savedHeight, 10);
+          if (h > 0) setReservedHeight(h);
+        } else if (bar && !bar.classList.contains("hidden")) {
+          reserveBarHeight();
+        }
+      }
+      // Natives Banner mit aus-/einblenden (verdeckt sonst die Tastatur-Zeile)
+      const AdMob = plugin();
+      if (isNative() && AdMob && this.nativeBannerVisible) {
+        try {
+          if (open && AdMob.hideBanner) AdMob.hideBanner();
+          else if (!open && AdMob.resumeBanner) AdMob.resumeBanner();
+        } catch (e) {
+          /* nicht kritisch */
+        }
       }
     },
 
@@ -67,8 +147,10 @@
       const bar = document.getElementById("ad-bar");
       if (!bar) return;
       bar.classList.remove("hidden");
-      // Höhe reservieren, sobald das Element gemessen werden kann.
-      requestAnimationFrame(() => setReservedHeight(bar.offsetHeight));
+      // Solange getippt wird, bleibt unten alles frei (CSS blendet die Leiste
+      // aus) — dann auch keinen Platz reservieren.
+      if (this.keyboardOpen) return;
+      reserveBarHeight();
     },
     hidePlaceholder() {
       const bar = document.getElementById("ad-bar");
