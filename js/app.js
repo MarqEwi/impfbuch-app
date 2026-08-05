@@ -2292,6 +2292,78 @@
     });
   }
 
+  /* ------------------------------------------------- Android-Zurück-Taste */
+
+  // Kleine Einblendung am unteren Rand (z. B. „Erneut drücken zum Beenden").
+  let toastTimer = null;
+  function showToast(text) {
+    const t = el("#toast");
+    if (!t) return;
+    t.textContent = text;
+    t.classList.remove("hidden");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.add("hidden"), 1800);
+  }
+
+  /*
+   * Zurück-Taste: erst offene Dialoge schließen (über deren Abbrechen-Knopf,
+   * damit Aufräum-Logik wie pendingDelete/confirmAction mitläuft), dann zum
+   * Impfpass-Tab zurück, und erst zweimaliges Drücken kurz hintereinander
+   * beendet die App.
+   */
+  const BACK_CANCEL = {
+    "record-dialog": "#dlg-cancel",
+    "quick-dialog": "#q-cancel",
+    "edit-dialog": "#edit-cancel",
+    "delete-dialog": "#del-cancel",
+    "export-dialog": "#export-cancel",
+    "backup-dialog": "#backup-cancel",
+    "person-dialog": "#person-cancel",
+    "premium-dialog": "#premium-close",
+    "info-dialog": "#info-close",
+    "msg-dialog": "#msg-ok",
+    "confirm-dialog": "#confirm-cancel",
+    "notify-dialog": "#notify-cancel",
+  };
+  let lastBackPress = 0;
+
+  function handleBack() {
+    // 1) Offener Dialog? → schließen (wie Abbrechen)
+    const dlg = document.querySelector("dialog[open]");
+    if (dlg) {
+      if (dlg.id === "setup-dialog") {
+        // wie ESC: Überspringen zählt als erledigt (kein Nerv-Loop)
+        state.settings.setupDone = true;
+        saveData();
+        dlg.close();
+      } else {
+        const btn = BACK_CANCEL[dlg.id] && el(BACK_CANCEL[dlg.id]);
+        if (btn) btn.click();
+        else dlg.close();
+      }
+      return "dialog";
+    }
+    // 2) Nicht auf dem Impfpass-Tab? → dorthin zurück
+    const active = document.querySelector(".tab.active");
+    if (active && active.dataset.tab !== "pass") {
+      activateTab("pass");
+      return "tab";
+    }
+    // 3) Impfpass-Tab: doppelt drücken beendet die App
+    const now = Date.now();
+    if (now - lastBackPress < 2000) {
+      const AppPlugin =
+        window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+      if (AppPlugin && AppPlugin.exitApp) AppPlugin.exitApp();
+      return "exit";
+    }
+    lastBackPress = now;
+    showToast("Erneut drücken zum Beenden");
+    return "hint";
+  }
+  // Für die native Registrierung und zum Testen erreichbar machen.
+  window.handleAndroidBack = handleBack;
+
   /* ------------------------------------------------------------------ Init */
 
   function init() {
@@ -2469,6 +2541,16 @@
         const res = await syncReminders();
         renderNotifyStatus(res);
       });
+    }
+
+    // Android-Zurück-Taste übernehmen (sobald ein Listener registriert ist,
+    // beendet Capacitor die App nicht mehr von selbst).
+    if (window.NativeBridge && window.NativeBridge.isNative()) {
+      const AppPlugin =
+        window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+      if (AppPlugin && AppPlugin.addListener) {
+        AppPlugin.addListener("backButton", () => handleBack());
+      }
     }
 
     // Monetarisierung starten: Edition aus gespeichertem Zustand übernehmen
