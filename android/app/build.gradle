@@ -9,7 +9,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Höher als ALLE bisherigen Play-Uploads (TWA: 1 und 2; Capacitor: 3;
         // erster 2.1.0-Build: 4). Bei JEDEM Play-Upload erhöhen (Learning F24).
-        versionCode 13
+        versionCode 14
         versionName "2.4.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
