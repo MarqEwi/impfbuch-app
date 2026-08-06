@@ -561,13 +561,9 @@ main {
   padding: 6px 8px;
   border-radius: 6px;
 }
-.btn-hide::before {
-  content: "⊘ ";
-}
-/* Der Überwachen-Button teilt sich das Layout mit .btn-hide, aber ohne ⊘ */
-.btn-monitor::before {
-  content: none;
-}
+/* Kein ⊘ mehr davor: Jede dieser Schaltflächen bringt inzwischen ihr
+   eigenes SVG-Symbol mit (Ausblenden ✕, Wegen Alter 📅, Überwachen 🔔).
+   Das Zeichen stammte aus der Zeit davor und ergab ein zweites Symbol. */
 .btn-hide:hover {
   color: var(--overdue);
   background: rgba(192, 57, 43, 0.08);
