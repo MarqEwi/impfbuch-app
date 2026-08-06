@@ -20,6 +20,49 @@
   --btn-shadow: 0 1px 2px rgba(45, 35, 0, 0.22);
   --btn-shadow-hover: 0 2px 6px rgba(45, 35, 0, 0.28);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* ------------------------------------------------------ Gestaltungsraster
+   * Einheitliche Stufen statt gewachsener Einzelwerte. Neue Regeln bitte
+   * immer aus diesen Stufen bedienen — das hält das Bild ruhig.
+   */
+  /* Abstände (4er-Raster) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  /* Ecken */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+  /* Höhenstaffelung: je höher, desto weiter „über" der Fläche */
+  --el-1: 0 1px 2px rgba(60, 45, 5, 0.14);
+  --el-2: 0 2px 6px rgba(60, 45, 5, 0.16), 0 1px 2px rgba(60, 45, 5, 0.1);
+  --el-3: 0 6px 18px rgba(60, 45, 5, 0.18), 0 2px 6px rgba(60, 45, 5, 0.1);
+  --el-4: 0 14px 38px rgba(45, 35, 0, 0.28);
+  /* Bewegung */
+  --ease: cubic-bezier(0.2, 0, 0.2, 1);
+  --dur: 0.18s;
+}
+
+/* Dezente Übergänge auf allen Bedienelementen — wirkt wertiger als
+   harte Sprünge. Wer Animationen abgeschaltet hat, bekommt keine. */
+@media (prefers-reduced-motion: no-preference) {
+  .btn,
+  .btn-small,
+  .theme-btn,
+  .prof-chip,
+  .preset-chip,
+  .tab,
+  .rem-action,
+  .btn-info,
+  .ad-bar-btn {
+    transition: background var(--dur) var(--ease),
+      box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease),
+      transform 0.08s var(--ease);
+  }
 }
 
 * {
@@ -29,8 +72,8 @@
 body {
   margin: 0;
   background-color: #d8b840;
-  background-image: url("../images/paper.jpg");
-  background-size: 760px auto;
+  background-image: url("../images/paper.png");
+  background-size: 256px 256px;
   background-repeat: repeat;
   color: var(--ink);
   min-height: 100vh;
@@ -1906,6 +1949,116 @@ dialog#quick-dialog::backdrop {
   word-break: break-word;
 }
 
+
+/* ==================================================== FEINSCHLIFF (Layer)
+ * Vereinheitlicht Ecken, Höhenstaffelung, Typografie und Anfassflächen auf
+ * die Stufen aus :root. Bewusst OHNE border-Angaben, damit die Themes
+ * (z. B. die kräftigen schwarzen Ränder der neutralen Ansicht) weiter
+ * gelten. Steht deshalb vor den Theme-Blöcken.
+ */
+
+/* --- Flächen: gleiche Ecken, gestaffelte Tiefe --- */
+.form-card,
+.pass-section,
+.travel-card,
+.travel-mine,
+.reminder {
+  border-radius: var(--r-md);
+  box-shadow: var(--el-2);
+}
+.pass-section,
+.travel-card {
+  box-shadow: var(--el-3);
+}
+dialog {
+  border-radius: var(--r-lg);
+  box-shadow: var(--el-4);
+}
+
+/* --- Bedienelemente: gleiche Höhe, sauberer Druckpunkt --- */
+.btn {
+  border-radius: var(--r-sm);
+  min-height: 44px; /* bequem treffbar */
+  box-shadow: var(--el-1);
+}
+.btn:hover {
+  box-shadow: var(--el-2);
+}
+.btn:active {
+  transform: translateY(1px) scale(0.995);
+  box-shadow: var(--el-1);
+}
+.btn-small,
+.preset-chip,
+.prof-chip {
+  border-radius: var(--r-pill);
+  box-shadow: var(--el-1);
+}
+.theme-btn {
+  border-radius: var(--r-sm);
+  min-height: 44px;
+  box-shadow: var(--el-1);
+}
+.rem-action {
+  border-radius: var(--r-pill);
+  min-height: 38px;
+}
+
+/* --- Typografie: ruhigere Hierarchie --- */
+.who-title {
+  letter-spacing: 0.01em;
+}
+.panel-title {
+  font-size: 0.82rem;
+  letter-spacing: 0.09em;
+}
+.vac-title {
+  font-size: 0.98rem;
+  letter-spacing: -0.005em;
+}
+.rem-title {
+  font-size: 0.95rem;
+  letter-spacing: -0.005em;
+}
+.pass-section-head {
+  letter-spacing: 0.08em;
+}
+/* Datumsangaben mit gleich breiten Ziffern — Spalten fluchten dadurch */
+.up-date,
+.ve-date,
+.rem-sub,
+.next-date,
+.holder-value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+/* Fließtext etwas luftiger */
+.hint,
+.details-body p,
+.info-section p {
+  line-height: 1.6;
+}
+
+/* --- Deckblatt: wirkt wie geprägter Druck statt flacher Fläche --- */
+.pass-cover {
+  border-radius: var(--r-lg);
+  box-shadow: var(--el-3), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* --- Tab-Leiste --- */
+.tabs {
+  border-radius: var(--r-md);
+  box-shadow: var(--el-2);
+}
+.tab {
+  min-height: 46px;
+}
+
+/* --- Info-Fenster: Abschnitte klarer trennen --- */
+.info-section h4 {
+  letter-spacing: 0.04em;
+}
+
 /* ============================================================ DARK MODE */
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -1932,7 +2085,7 @@ dialog#quick-dialog::backdrop {
       rgba(20, 17, 11, 0.82),
       rgba(20, 17, 11, 0.82)
     ),
-    url("../images/paper.jpg");
+    url("../images/paper.png");
 }
 /* Deckblatt */
 :root[data-theme="dark"] .app-header {
