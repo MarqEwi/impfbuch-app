@@ -76,7 +76,9 @@ body {
   background-size: 760px auto;
   background-repeat: repeat;
   color: var(--ink);
-  min-height: 100vh;
+  /* dvh statt vh: Bei „viewport-fit=cover" ist 100vh auf Android größer als
+     der wirklich sichtbare Bereich. */
+  min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -1939,14 +1941,27 @@ dialog#quick-dialog::backdrop {
   padding: 8px 4px;
   border: 1px solid transparent;
   border-radius: 10px;
+}
+.book.active {
+  border-color: var(--line-strong);
+  background: rgba(120, 115, 100, 0.08);
+}
+.book-select {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
   background: none;
   cursor: pointer;
   font: inherit;
   color: var(--ink);
 }
-.book.active {
-  border-color: var(--line-strong);
-  background: rgba(120, 115, 100, 0.08);
+.book-edit {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  white-space: nowrap;
 }
 .book-art {
   position: relative;
@@ -2668,8 +2683,13 @@ dialog#quick-dialog::backdrop {
 :root {
   --ad-height: 0px;
 }
+/* --ad-height ist die gemessene Höhe der Werbeleiste und enthält deren
+   eigenen Sicherheitsabstand. Ist die Leiste ausgeblendet — bei Premium,
+   nicht geladener Anzeige oder offener Tastatur — steht sie auf 0, und die
+   Navigationsleiste des Geräts würde die letzten Zeilen verdecken. Deshalb
+   mindestens den Geräte-Sicherheitsabstand freihalten. */
 body {
-  padding-bottom: var(--ad-height);
+  padding-bottom: max(var(--ad-height), env(safe-area-inset-bottom, 0px));
 }
 /* Dezente Werbe-/Platzhalterleiste unten */
 .ad-bar {

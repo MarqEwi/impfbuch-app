@@ -1118,19 +1118,31 @@
               offen.ueberfaellig ? "" : " book-badge-soon"
             }" title="${offen.gesamt} Impfung(en) stehen an">${offen.gesamt}</span>`
           : "";
+        /* Kein Button im Button — deshalb ein Behälter mit zwei getrennten
+           Schaltflächen: das Buch wechselt die Person, der Knopf darunter
+           öffnet die Angaben. */
         return `
-          <button class="book ${p.id === aktiv.id ? "active" : ""}" data-pid="${p.id}"
-                  title="Impfbuch von ${esc(p.name)} anpassen">
-            <span class="book-art">${bookSvg(
-              b.color || BOOK_COLORS[0].value,
-              initialsOf(p.name)
-            )}${abzeichen}</span>
-            <span class="book-name">${esc(p.name)}</span>
-          </button>`;
+          <div class="book ${p.id === aktiv.id ? "active" : ""}">
+            <button class="book-select" data-pid="${p.id}"
+                    title="Zu ${esc(p.name)} wechseln">
+              <span class="book-art">${bookSvg(
+                b.color || BOOK_COLORS[0].value,
+                initialsOf(p.name)
+              )}${abzeichen}</span>
+              <span class="book-name">${esc(p.name)}</span>
+            </button>
+            <button class="btn-small book-edit" data-pid="${p.id}"
+                    title="Farbe und Angaben von ${esc(p.name)} bearbeiten">
+              Daten bearbeiten
+            </button>
+          </div>`;
       })
       .join("");
     shelf
-      .querySelectorAll(".book")
+      .querySelectorAll(".book-select")
+      .forEach((b) => b.addEventListener("click", () => switchProfile(b.dataset.pid)));
+    shelf
+      .querySelectorAll(".book-edit")
       .forEach((b) => b.addEventListener("click", () => openBookDialog(b.dataset.pid)));
   }
 
