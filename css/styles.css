@@ -47,18 +47,18 @@
   --dur: 0.18s;
 }
 
-/* Dezente Übergänge auf allen Bedienelementen — wirkt wertiger als
-   harte Sprünge. Wer Animationen abgeschaltet hat, bekommt keine. */
+/* Dezente Übergänge — nur in der modernen Ansicht.
+   Wer Animationen abgeschaltet hat, bekommt keine. */
 @media (prefers-reduced-motion: no-preference) {
-  .btn,
-  .btn-small,
-  .theme-btn,
-  .prof-chip,
-  .preset-chip,
-  .tab,
-  .rem-action,
-  .btn-info,
-  .ad-bar-btn {
+  :root[data-theme="modern"] .btn,
+  :root[data-theme="modern"] .btn-small,
+  :root[data-theme="modern"] .theme-btn,
+  :root[data-theme="modern"] .prof-chip,
+  :root[data-theme="modern"] .preset-chip,
+  :root[data-theme="modern"] .tab,
+  :root[data-theme="modern"] .rem-action,
+  :root[data-theme="modern"] .btn-info,
+  :root[data-theme="modern"] .ad-bar-btn {
     transition: background var(--dur) var(--ease),
       box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease),
       transform 0.08s var(--ease);
@@ -72,8 +72,8 @@
 body {
   margin: 0;
   background-color: #d8b840;
-  background-image: url("../images/paper.png");
-  background-size: 256px 256px;
+  background-image: url("../images/paper.jpg");
+  background-size: 760px auto;
   background-repeat: repeat;
   color: var(--ink);
   min-height: 100vh;
@@ -1950,33 +1950,36 @@ dialog#quick-dialog::backdrop {
 }
 
 
-/* ==================================================== FEINSCHLIFF (Layer)
- * Vereinheitlicht Ecken, Höhenstaffelung, Typografie und Anfassflächen auf
- * die Stufen aus :root. Bewusst OHNE border-Angaben, damit die Themes
- * (z. B. die kräftigen schwarzen Ränder der neutralen Ansicht) weiter
- * gelten. Steht deshalb vor den Theme-Blöcken.
+/* ===================================================== ANSICHT „MODERN"
+ * Gestalterische Verfeinerung der klassischen Ansicht: einheitliche Ecken,
+ * gestaffelte Tiefe, ruhigere Typografie, größere Anfassflächen und eine
+ * feine, gleichmäßige Papiertextur.
+ *
+ * Bewusst als eigene Ansicht statt als neuer Standard — der klassische
+ * Impfpass-Look bleibt unverändert. Enthält KEINE border-Angaben, damit die
+ * Ränder der jeweiligen Farbwelt gelten.
  */
 
 /* --- Flächen: gleiche Ecken, gestaffelte Tiefe --- */
-.form-card,
-.pass-section,
-.travel-card,
-.travel-mine,
-.reminder {
+  :root[data-theme="modern"] .form-card,
+  :root[data-theme="modern"] .pass-section,
+  :root[data-theme="modern"] .travel-card,
+  :root[data-theme="modern"] .travel-mine,
+  :root[data-theme="modern"] .reminder {
   border-radius: var(--r-md);
   box-shadow: var(--el-2);
 }
-.pass-section,
-.travel-card {
+  :root[data-theme="modern"] .pass-section,
+  :root[data-theme="modern"] .travel-card {
   box-shadow: var(--el-3);
 }
-dialog {
+  :root[data-theme="modern"] dialog {
   border-radius: var(--r-lg);
   box-shadow: var(--el-4);
 }
 
 /* --- Bedienelemente: gleiche Höhe, sauberer Druckpunkt --- */
-.btn {
+  :root[data-theme="modern"] .btn {
   border-radius: var(--r-sm);
   min-height: 44px; /* bequem treffbar */
   box-shadow: var(--el-1);
@@ -1988,75 +1991,82 @@ dialog {
   transform: translateY(1px) scale(0.995);
   box-shadow: var(--el-1);
 }
-.btn-small,
-.preset-chip,
-.prof-chip {
+  :root[data-theme="modern"] .btn-small,
+  :root[data-theme="modern"] .preset-chip,
+  :root[data-theme="modern"] .prof-chip {
   border-radius: var(--r-pill);
   box-shadow: var(--el-1);
 }
-.theme-btn {
+  :root[data-theme="modern"] .theme-btn {
   border-radius: var(--r-sm);
   min-height: 44px;
   box-shadow: var(--el-1);
 }
-.rem-action {
+  :root[data-theme="modern"] .rem-action {
   border-radius: var(--r-pill);
   min-height: 38px;
 }
 
 /* --- Typografie: ruhigere Hierarchie --- */
-.who-title {
+  :root[data-theme="modern"] .who-title {
   letter-spacing: 0.01em;
 }
-.panel-title {
+  :root[data-theme="modern"] .panel-title {
   font-size: 0.82rem;
   letter-spacing: 0.09em;
 }
-.vac-title {
+  :root[data-theme="modern"] .vac-title {
   font-size: 0.98rem;
   letter-spacing: -0.005em;
 }
-.rem-title {
+  :root[data-theme="modern"] .rem-title {
   font-size: 0.95rem;
   letter-spacing: -0.005em;
 }
-.pass-section-head {
+  :root[data-theme="modern"] .pass-section-head {
   letter-spacing: 0.08em;
 }
 /* Datumsangaben mit gleich breiten Ziffern — Spalten fluchten dadurch */
-.up-date,
-.ve-date,
-.rem-sub,
-.next-date,
-.holder-value {
+  :root[data-theme="modern"] .up-date,
+  :root[data-theme="modern"] .ve-date,
+  :root[data-theme="modern"] .rem-sub,
+  :root[data-theme="modern"] .next-date,
+  :root[data-theme="modern"] .holder-value {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
 }
 /* Fließtext etwas luftiger */
-.hint,
-.details-body p,
-.info-section p {
+  :root[data-theme="modern"] .hint,
+  :root[data-theme="modern"] .details-body p,
+  :root[data-theme="modern"] .info-section p {
   line-height: 1.6;
 }
 
 /* --- Deckblatt: wirkt wie geprägter Druck statt flacher Fläche --- */
-.pass-cover {
+  :root[data-theme="modern"] .pass-cover {
   border-radius: var(--r-lg);
   box-shadow: var(--el-3), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 /* --- Tab-Leiste --- */
-.tabs {
+  :root[data-theme="modern"] .tabs {
   border-radius: var(--r-md);
   box-shadow: var(--el-2);
 }
-.tab {
+  :root[data-theme="modern"] .tab {
   min-height: 46px;
 }
 
 /* --- Info-Fenster: Abschnitte klarer trennen --- */
-.info-section h4 {
+  :root[data-theme="modern"] .info-section h4 {
   letter-spacing: 0.04em;
+}
+
+
+/* Feine, gleichmäßig kachelnde Papiertextur (rechnerisch erzeugt) */
+:root[data-theme="modern"] body {
+  background-image: url("../images/paper.png");
+  background-size: 256px 256px;
 }
 
 /* ============================================================ DARK MODE */
@@ -2085,7 +2095,7 @@ dialog {
       rgba(20, 17, 11, 0.82),
       rgba(20, 17, 11, 0.82)
     ),
-    url("../images/paper.png");
+    url("../images/paper.jpg");
 }
 /* Deckblatt */
 :root[data-theme="dark"] .app-header {
