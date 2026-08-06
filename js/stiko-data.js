@@ -103,9 +103,7 @@ const STIKO_SCHEDULE = [
       "Krankenhausaufenthalte im ersten Lebensjahr.",
     ageInfo:
       "Einmalig für alle Neugeborenen und Säuglinge in der ersten RSV-Saison " +
-      "(Herbst/Winter). Im Sommer geborene Kinder erhalten sie im Herbst, " +
-      "während der Saison Geborene möglichst gleich nach der Geburt. " +
-      "Versäumtes bis zum 1. Geburtstag nachholen.",
+      "(Herbst/Winter). Versäumtes bis zum 1. Geburtstag nachholen.",
     noBooster:
       "Der Schutz ist nur für die erste RSV-Saison vorgesehen; danach ist keine " +
       "weitere Gabe empfohlen.",
@@ -122,10 +120,9 @@ const STIKO_SCHEDULE = [
     info: "Erste Dosis ab einem Alter von 6 Wochen, Impfserie früh abschließen.",
     ageInfo:
       "Beginn ab 6 Wochen, möglichst bis zum Alter von 12 Wochen. Je nach " +
-      "Impfstoff 2 oder 3 Schluckdosen im Abstand von mindestens 4 Wochen. " +
-      "Die Serie muss spätestens mit 24 bzw. 32 Wochen abgeschlossen sein — " +
-      "danach darf nicht mehr geimpft werden, weil das Risiko einer " +
-      "Darmeinstülpung mit dem Alter steigt.",
+      "Impfstoff 2 oder 3 Schluckdosen. Die Serie muss spätestens mit 24 " +
+      "bzw. 32 Wochen abgeschlossen sein — danach ist die Impfung nicht " +
+      "mehr zugelassen.",
     source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 1.5 * MONTH, note: "ab 6 Wochen" },
@@ -186,7 +183,7 @@ const STIKO_SCHEDULE = [
     group: "basis",
     info: "Grundimmunisierung als Säugling, Auffrischungen im Kindes-/Jugendalter; im Erwachsenenalter einmalig mit der nächsten Td-Auffrischung (als Tdap).",
     ageInfo:
-      "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Auffrischungen mit 5–6 und 9–16 Jahren. Erwachsene erhalten EINMALIG eine Auffrischung zusammen mit der nächsten Tetanus-Impfung. Schwangere sollen in JEDER Schwangerschaft im letzten Drittel geimpft werden — das schützt das Neugeborene.",
+      "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Auffrischungen mit 5–6 und 9–16 Jahren. Erwachsene frischen einmalig zusammen mit der nächsten Tetanus-Impfung auf. Schwangere sollen in jeder Schwangerschaft im letzten Drittel geimpft werden.",
     source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 2 * MONTH },
@@ -206,9 +203,9 @@ const STIKO_SCHEDULE = [
       "Grundimmunisierung als Säugling (2, 4, 11 Monate), eine Auffrischung " +
       "im Alter von 9–16 Jahren. Fehlendes ist lebenslang nachholbar.",
     noBooster:
-      "Nach der einmaligen Auffrischung im Jugendalter sind in Deutschland " +
-      "keine weiteren Auffrischungen nötig. Die 10-Jahres-Regel gilt nur für " +
-      "Reisen in Länder mit Polio-Risiko und für bestimmte Berufe.",
+      "Nach der Auffrischung im Jugendalter sind in Deutschland keine " +
+      "weiteren nötig. Die 10-Jahres-Regel gilt nur für Reisen in " +
+      "Risikoländer und bestimmte Berufe.",
     source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 2 * MONTH },
@@ -358,10 +355,8 @@ const STIKO_SCHEDULE = [
     ageInfo:
       "Einmalig ab 60 Jahren mit dem 20-fach-Konjugatimpfstoff (PCV20).",
     noBooster:
-      "Zur Notwendigkeit einer Wiederholung liegen für PCV20 noch keine Daten " +
-      "vor, deshalb spricht die STIKO dazu keine Empfehlung aus — und die App " +
-      "erinnert nicht daran. Wer früher den älteren Impfstoff PPSV23 erhalten " +
-      "hat, soll frühestens 6 Jahre danach PCV20 bekommen.",
+      "Für den heutigen Impfstoff gibt es noch keine Empfehlung zur " +
+      "Wiederholung — die App erinnert deshalb nicht daran.",
     source: "kalender",
     series: [{ label: "1 Dosis", ageMonths: 60 * YEAR }],
     adultOnly: true,
@@ -434,9 +429,8 @@ const STIKO_SCHEDULE = [
       "die zweite nach 1–3 Monaten, die dritte je nach Impfstoff 5–12 Monate " +
       "später.",
     noBooster:
-      "Erste Auffrischung 3 Jahre nach Abschluss der Grundimmunisierung — so " +
-      "ist es hier hinterlegt. Danach genügen meist 5 Jahre. Ab 50 bzw. 60 " +
-      "Jahren (je nach Impfstoff) wird wieder alle 3 Jahre aufgefrischt.",
+      "Erste Auffrischung 3 Jahre nach der Grundimmunisierung, danach meist " +
+      "alle 5 Jahre. Ab 50 bzw. 60 Jahren wieder alle 3 Jahre.",
     source: "reise",
     series: [
       { label: "1. Dosis", ageMonths: 12 * MONTH },
@@ -456,10 +450,9 @@ const STIKO_SCHEDULE = [
       "Ab 12 Monaten. Zwei Dosen im Abstand von 6–12 Monaten geben " +
       "langjährigen Schutz.",
     noBooster:
-      "Die App zeigt keine Auffrischung an. Nach vollständiger " +
-      "Grundimmunisierung besteht bei fast allen Geimpften mindestens 10–20 " +
-      "Jahre Schutz; ob überhaupt eine Auffrischung nötig ist, ist offiziell " +
-      "noch ungeklärt. Eine feste Jahreszahl wäre deshalb nur geraten.",
+      "Nach zwei Dosen besteht sehr langer Schutz; ob überhaupt eine " +
+      "Auffrischung nötig ist, ist offiziell nicht geklärt. Die App nennt " +
+      "deshalb keine Frist.",
     source: "reise",
     series: [
       { label: "1. Dosis", ageMonths: 12 * MONTH },
@@ -481,13 +474,11 @@ const STIKO_SCHEDULE = [
       "Ab 9 Monaten. Eine Dosis genügt. Unter 6 Monaten darf nicht geimpft " +
       "werden, zwischen 6 und 8 Monaten nur ausnahmsweise.",
     noBooster:
-      "Das internationale Impfzertifikat ist seit der WHO-Regelung " +
-      "LEBENSLANG gültig — auch bereits ausgestellte Zertifikate. Die App " +
-      "zeigt deshalb kein Ablaufdatum an. Medizinisch empfiehlt die STIKO " +
-      "lediglich EINE einmalige Auffrischung nach 10 oder mehr Jahren, und " +
-      "nur bei erneuter Reise in ein Risikogebiet; danach nie wieder. " +
-      "Sonderfall: Wer die erste Impfung vor dem 2. Geburtstag erhalten hat, " +
-      "sollte sie schon nach 5 Jahren auffrischen.",
+      "Das internationale Impfzertifikat gilt lebenslang — auch bereits " +
+      "ausgestellte. Die App zeigt deshalb kein Ablaufdatum an. Vor einer " +
+      "erneuten Reise ins Risikogebiet kann nach 10 Jahren einmalig " +
+      "aufgefrischt werden; wer als Kleinkind geimpft wurde, schon nach 5 " +
+      "Jahren.",
     source: "reise",
     series: [{ label: "1 Dosis", ageMonths: 9 * MONTH, note: "ab 9 Monaten" }],
     onDemand: true,
@@ -526,13 +517,10 @@ const STIKO_SCHEDULE = [
       "Kurzschema mit 2 Dosen (Tag 0 und 7) möglich; bei fortbestehendem " +
       "Risiko folgt dann spätestens nach einem Jahr eine dritte Dosis.",
     noBooster:
-      "Die App erinnert bewusst nicht an eine Auffrischung. Grund: Nach drei " +
-      "Dosen hält die Fähigkeit des Körpers, schnell zu reagieren, laut STIKO " +
-      "„Jahrzehnte, ggf. lebenslang" + "“" + " an; routinemäßige " +
-      "Blutkontrollen sind für Reisende nicht empfohlen. Die " +
-      "Herstellerangaben nennen zwar 2–5 Jahre, das würde aber zu unnötigen " +
-      "Impfungen führen. Wichtig: Nach einem Biss oder Kratzer ist IMMER " +
-      "sofort ärztliche Hilfe nötig — auch wenn du geimpft bist.",
+      "Nach drei Dosen hält der Schutz laut STIKO sehr lange an — deshalb " +
+      "erinnert die App nicht an eine Auffrischung. Wichtig: Nach einem Biss " +
+      "oder Kratzer ist immer sofort ärztliche Hilfe nötig, auch wenn du " +
+      "geimpft bist.",
     source: "reise",
     series: [
       { label: "1. Dosis", ageMonths: 12 * MONTH },
@@ -552,10 +540,9 @@ const STIKO_SCHEDULE = [
       "Spritze (Typhim Vi) ab 2 Jahren, Schluckimpfung (Typhoral L) ab 5 " +
       "Jahren. Die Schluckimpfung besteht aus 3 Kapseln an Tag 1, 3 und 5.",
     noBooster:
-      "Je nach Impfstoff sehr unterschiedlich: Die Spritze schützt etwa 3 " +
-      "Jahre — dieser Wert ist hier hinterlegt. Bei der Schluckimpfung " +
-      "empfiehlt die STIKO dagegen eine JÄHRLICHE Auffrischung. Wenn du die " +
-      "Kapseln bekommen hast, verlass dich also nicht auf die 3 Jahre.",
+      "Je nach Impfstoff unterschiedlich: Die Spritze schützt etwa 3 Jahre — " +
+      "dieser Wert ist hinterlegt. Bei der Schluckimpfung wird dagegen " +
+      "jährlich aufgefrischt.",
     source: "reise",
     series: [{ label: "1 Dosis", ageMonths: 12 * MONTH }],
     onDemand: true,
@@ -596,10 +583,9 @@ const STIKO_SCHEDULE = [
       "im Abstand von 1–6 Wochen. Kinder von 2 bis unter 6 Jahren brauchen 3 " +
       "Dosen.",
     noBooster:
-      "Der hinterlegte Wert von 2 Jahren gilt für Erwachsene. Kinder unter 6 " +
-      "Jahren brauchen schon nach 6 Monaten eine Auffrischung. Wichtig: Ist " +
-      "der Schutz abgelaufen, wird nicht einfach eine Dosis nachgeholt — die " +
-      "Grundimmunisierung muss komplett wiederholt werden.",
+      "Der hinterlegte Wert von 2 Jahren gilt für Erwachsene; bei Kindern " +
+      "unter 6 Jahren sind es 6 Monate. Ist der Schutz abgelaufen, wird die " +
+      "Grundimmunisierung komplett wiederholt.",
     source: "reise",
     series: [
       { label: "1. Dosis", ageMonths: 12 * MONTH },
