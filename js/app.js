@@ -66,7 +66,14 @@
   const STORAGE_KEY = "impfpass_v1";
 
   // Fenster in Tagen: „bald fällig" beginnt so viele Tage vor dem Termin.
-  const SOON_DAYS = 60;
+  const SOON_DAYS = 90;
+
+  /* Termine, die weiter voraus liegen, stehen nicht in der Hauptliste,
+     sondern in einem eingeklappten Bereich darunter. Sonst füllen Einträge
+     wie „Pneumokokken ab 60" die Liste einer Dreißigjährigen mit Terminen,
+     die sie noch Jahrzehnte nicht braucht — und der Eindruck entsteht, die
+     App empfehle etwas Altersfremdes. */
+  const VORSCHAU_TAGE = 5 * 365;
 
   const byId = (id) => STIKO_SCHEDULE.find((v) => v.id === id);
   const uid = (p) => p + Date.now() + Math.random().toString(36).slice(2, 6);
@@ -407,6 +414,8 @@
     renderReminders();
     renderPass();
     renderHidden();
+    renderCoach();
+    renderBookShelf();
     renderTravelSelected();
     renderTravelPanel();
     renderPremiumCard();
@@ -883,6 +892,314 @@
     el("#info-dialog").showModal();
   }
 
+  /* ------------------------------------------------------- Starthilfe */
+
+  /* Sprechblase unter dem Schnelleintrag. Sie erscheint nach der Einleitung
+     — auch wenn diese übersprungen wurde — und hält niemanden auf: die App
+     bleibt vollständig bedienbar. Sie verschwindet von selbst, sobald die
+     erste Impfung eingetragen ist, spätestens auf Tippen von „Verstanden". */
+  function renderCoach() {
+    const box = el("#coach");
+    if (!box) return;
+    const s = state.settings || {};
+    const p = activeProfile();
+    const hatEintraege = (p.records || []).length > 0;
+    const zeigen = !!s.setupDone && !s.coachDone && !hatEintraege;
+    box.classList.toggle("hidden", !zeigen);
+    if (!zeigen) return;
+
+    /* Fehlt das Geburtsdatum, ist es der wichtigere der beiden Schritte —
+       ohne es kann die App keine Fälligkeit berechnen. */
+    el("#coach-text").innerHTML = p.birthdate
+      ? `<strong>Jetzt die bisherigen Impfungen übertragen.</strong> Am
+         schnellsten geht das mit dem <strong>Schnelleintrag</strong> oben:
+         Dort trägst du alle Impfungen eines Termins auf einmal ein.`
+      : `<strong>Zwei Schritte zum Start.</strong> Hinterlege unter
+         <strong>Profil</strong> das Geburtsdatum — daraus berechnet die App
+         die Fälligkeiten. Deine bisherigen Impfungen überträgst du dann am
+         schnellsten über den <strong>Schnelleintrag</strong> oben.`;
+  }
+
+  function dismissCoach() {
+    state.settings.coachDone = true;
+    saveData();
+    renderCoach();
+  }
+
+  /* ------------------------------------------------ Impfung im Pass suchen */
+
+  /* Kombiniertes Feld: entweder aus der aufklappbaren Liste wählen oder
+     tippen. Beides springt zur Impfung im Impfpass. */
+  function setupVaccineSearch() {
+    const feld = el("#vac-search-input");
+    const liste = el("#vac-search-list");
+    if (!feld || !liste) return;
+
+    liste.innerHTML = STIKO_SCHEDULE.map((v) => {
+      const zusatz = v.fullName && v.fullName !== v.name ? v.fullName : "";
+      return `<option value="${esc(v.name)}">${esc(zusatz)}</option>`;
+    }).join("");
+
+    const finde = (text) => {
+      const t = text.trim().toLowerCase();
+      if (!t) return null;
+      const passt = (s) => (s || "").toLowerCase();
+      return (
+        STIKO_SCHEDULE.find((v) => passt(v.name) === t) ||
+        STIKO_SCHEDULE.find((v) => passt(v.fullName) === t) ||
+        STIKO_SCHEDULE.find((v) => passt(v.name).includes(t)) ||
+        STIKO_SCHEDULE.find((v) => passt(v.fullName).includes(t)) ||
+        STIKO_SCHEDULE.find((v) => passt(v.disease).includes(t)) ||
+        null
+      );
+    };
+
+    const springe = () => {
+      const v = finde(feld.value);
+      if (!v) return;
+      feld.value = "";
+      feld.blur();
+      // Komplett ausgeblendete Impfungen haben keine Zeile zum Anspringen.
+      if (displayStateFor(v, activeProfile()) === "hidden") {
+        showToast(`${v.name} ist ausgeblendet — unter „Profil" einblendbar.`);
+        return;
+      }
+      gotoVaccineInPass(v.id);
+    };
+
+    feld.addEventListener("change", springe);
+    feld.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        springe();
+      }
+    });
+  }
+
+  /* --------------------------------------------------------- Impfbuch-Regal */
+
+  /* Jede Person bekommt ein eigenes Impfbuch. Die Angaben darin sind
+     freiwillig und dienen nur der eigenen Übersicht — sie fließen in keine
+     Berechnung ein und verlassen das Gerät nicht. */
+  const BOOK_COLORS = [
+    { id: "gelb", label: "Klassisch", value: "#d9a520" },
+    { id: "rot", label: "Rot", value: "#b23a2e" },
+    { id: "blau", label: "Blau", value: "#3d6b96" },
+    { id: "gruen", label: "Grün", value: "#3f7a4d" },
+    { id: "lila", label: "Lila", value: "#6b4a86" },
+    { id: "braun", label: "Braun", value: "#7a5c3a" },
+    { id: "grau", label: "Grau", value: "#5d6068" },
+    { id: "tuerkis", label: "Türkis", value: "#2f7d7a" },
+  ];
+  /* Reihenfolge bestimmt die Anordnung: kurze Angaben stehen paarweise
+     nebeneinander, mehrzeilige über die volle Breite. */
+  const BOOK_FIELDS = [
+    {
+      key: "doctor",
+      label: "Hausärztin / Hausarzt",
+      placeholder: "Praxis oder Name",
+    },
+    { key: "insurer", label: "Krankenkasse", placeholder: "z. B. AOK" },
+    {
+      key: "insuranceNo",
+      label: "Versichertennummer",
+      placeholder: "auf der Gesundheitskarte",
+    },
+    {
+      key: "bloodGroup",
+      label: "Blutgruppe",
+      placeholder: "z. B. 0 Rh+",
+      options: ["A Rh+", "A Rh−", "B Rh+", "B Rh−", "AB Rh+", "AB Rh−", "0 Rh+", "0 Rh−"],
+    },
+    {
+      key: "address",
+      label: "Adresse",
+      type: "textarea",
+      placeholder: "Straße und Hausnummer, PLZ Ort",
+    },
+    {
+      key: "allergies",
+      label: "Allergien & Hinweise",
+      type: "textarea",
+      placeholder: "z. B. Unverträglichkeiten",
+    },
+    {
+      key: "other",
+      label: "Sonstiges",
+      type: "textarea",
+      placeholder: "Platz für alles Weitere",
+    },
+  ];
+
+  function bookOf(profile) {
+    return profile.book || (profile.book = { color: BOOK_COLORS[0].value });
+  }
+
+  // Dunklere Tönung derselben Farbe für Buchrücken und Kanten.
+  function shade(hex, faktor) {
+    const n = parseInt(hex.slice(1), 16);
+    const mix = (v) => Math.max(0, Math.min(255, Math.round(v * faktor)));
+    return (
+      "#" +
+      [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+        .map((v) => mix(v).toString(16).padStart(2, "0"))
+        .join("")
+    );
+  }
+
+  function initialsOf(name) {
+    return (name || "?")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0] || "")
+      .join("")
+      .toUpperCase();
+  }
+
+  /* Ein kleines Impfbuch als SVG — bewusst gezeichnet statt als Bilddatei,
+     damit sich die Farbe frei wählen lässt und es auf jedem Bildschirm
+     scharf bleibt. */
+  function bookSvg(farbe, initialen) {
+    const ruecken = shade(farbe, 0.72);
+    const kante = shade(farbe, 0.86);
+    return `
+      <svg class="book-svg" viewBox="0 0 96 124" role="img" aria-hidden="true">
+        <rect x="14" y="10" width="76" height="110" rx="7" fill="rgba(0,0,0,.22)"/>
+        <rect x="8" y="4" width="80" height="112" rx="6" fill="${kante}"/>
+        <rect x="8" y="4" width="14" height="112" rx="5" fill="${ruecken}"/>
+        <rect x="20" y="7" width="65" height="106" rx="4" fill="${farbe}"/>
+        <rect x="30" y="26" width="46" height="38" rx="3" fill="rgba(255,255,255,.88)"/>
+        <text x="53" y="52" text-anchor="middle"
+              font-family="Georgia, serif" font-size="21" font-weight="700"
+              fill="${shade(farbe, 0.6)}">${esc(initialen)}</text>
+        <rect x="30" y="74" width="46" height="4" rx="2" fill="rgba(255,255,255,.55)"/>
+        <rect x="30" y="84" width="34" height="4" rx="2" fill="rgba(255,255,255,.4)"/>
+        <rect x="30" y="94" width="40" height="4" rx="2" fill="rgba(255,255,255,.4)"/>
+      </svg>`;
+  }
+
+  /* Zählt, was bei einer Person gerade ansteht — dieselbe Rechnung wie im
+     Tab „Fällig", damit die Zahl am Buch und das Tab-Abzeichen übereinstimmen. */
+  function actionableCount(profile) {
+    if (!profile || !profile.birthdate) return 0;
+    let n = 0;
+    for (const i of computeDueItems(profile)) {
+      if (displayStateFor(i.vaccine, profile) !== "shown") continue;
+      if (i.status === "overdue" || i.status === "soon") n++;
+      else if (
+        i.status === "optional" &&
+        recordsFor(profile, i.vaccine.id).length === 0 &&
+        (travelCountriesFor(i.vaccine.id, profile).length ||
+          isMonitored(i.vaccine.id, profile))
+      )
+        n++;
+    }
+    return n;
+  }
+
+  function renderBookShelf() {
+    const shelf = el("#book-shelf");
+    if (!shelf) return;
+    const aktiv = activeProfile();
+    shelf.innerHTML = state.profiles
+      .map((p) => {
+        const b = bookOf(p);
+        const offen = actionableCount(p);
+        const abzeichen = offen
+          ? `<span class="book-badge" title="${offen} Impfung(en) stehen an">${offen}</span>`
+          : "";
+        return `
+          <button class="book ${p.id === aktiv.id ? "active" : ""}" data-pid="${p.id}"
+                  title="Impfbuch von ${esc(p.name)} anpassen">
+            <span class="book-art">${bookSvg(
+              b.color || BOOK_COLORS[0].value,
+              initialsOf(p.name)
+            )}${abzeichen}</span>
+            <span class="book-name">${esc(p.name)}</span>
+          </button>`;
+      })
+      .join("");
+    shelf
+      .querySelectorAll(".book")
+      .forEach((b) => b.addEventListener("click", () => openBookDialog(b.dataset.pid)));
+  }
+
+  let bookEditId = null;
+
+  function openBookDialog(pid) {
+    const p = state.profiles.find((x) => x.id === pid);
+    if (!p) return;
+    bookEditId = pid;
+    const b = bookOf(p);
+    const farbe = b.color || BOOK_COLORS[0].value;
+
+    el("#book-dlg-title").textContent = "Impfbuch von " + p.name;
+    el("#book-preview").innerHTML = bookSvg(farbe, initialsOf(p.name));
+    el("#book-colors").innerHTML = BOOK_COLORS.map(
+      (c) =>
+        `<button type="button" class="book-color${
+          c.value.toLowerCase() === farbe.toLowerCase() ? " active" : ""
+        }" data-color="${c.value}" style="--farbe:${c.value}" title="${c.label}">
+           <span class="sr-only">${c.label}</span>
+         </button>`
+    ).join("");
+    el("#book-color-free").value = farbe;
+    el("#book-fields").innerHTML = BOOK_FIELDS.map((f) => {
+      const wert = esc(b[f.key] || "");
+      const platz = esc(f.placeholder || "");
+      const listeId = f.options ? `book-opt-${f.key}` : "";
+      const auswahl = f.options
+        ? `<datalist id="${listeId}">${f.options
+            .map((o) => `<option value="${esc(o)}"></option>`)
+            .join("")}</datalist>`
+        : "";
+      const eingabe =
+        f.type === "textarea"
+          ? `<textarea rows="2" data-bookfield="${f.key}" placeholder="${platz}">${wert}</textarea>`
+          : `<input type="text" data-bookfield="${f.key}" value="${wert}"
+                    placeholder="${platz}" autocomplete="off"
+                    ${listeId ? `list="${listeId}"` : ""} />`;
+      return `<label class="book-field${f.type === "textarea" ? " wide" : ""}">
+                <span class="book-field-label">${f.label}</span>
+                ${eingabe}${auswahl}
+              </label>`;
+    }).join("");
+
+    const waehle = (wert) => {
+      el("#book-preview").innerHTML = bookSvg(wert, initialsOf(p.name));
+      el("#book-color-free").value = wert;
+      el("#book-colors")
+        .querySelectorAll(".book-color")
+        .forEach((c) =>
+          c.classList.toggle("active", c.dataset.color.toLowerCase() === wert.toLowerCase())
+        );
+    };
+    el("#book-colors")
+      .querySelectorAll(".book-color")
+      .forEach((c) => c.addEventListener("click", () => waehle(c.dataset.color)));
+    el("#book-color-free").addEventListener("input", (e) => waehle(e.target.value));
+
+    el("#book-dialog").showModal();
+  }
+
+  function saveBookDialog() {
+    const p = state.profiles.find((x) => x.id === bookEditId);
+    if (!p) return;
+    const b = bookOf(p);
+    b.color = el("#book-color-free").value;
+    el("#book-fields")
+      .querySelectorAll("[data-bookfield]")
+      .forEach((f) => {
+        const wert = f.value.trim();
+        if (wert) b[f.dataset.bookfield] = wert;
+        else delete b[f.dataset.bookfield];
+      });
+    saveData();
+    render();
+    el("#book-dialog").close();
+  }
+
   /* -------------------------------------------------------------- Profile */
 
   function renderProfiles() {
@@ -1021,7 +1338,8 @@
     const shown = computeDueItems(active).filter(
       (i) => displayStateFor(i.vaccine, active) === "shown"
     );
-    const due = []; // überfällig / bald fällig (inkl. überwachte, abgelaufene)
+    const due = []; // überfällig (Termin liegt in der Vergangenheit)
+    const soon = []; // in den nächsten drei Monaten fällig
     const rec = []; // Reise-/Überwachungs-Empfehlung, noch nicht geimpft
     const upcoming = []; // künftige Termine mit Datum
 
@@ -1029,8 +1347,10 @@
       const travelC = travelCountriesFor(i.vaccine.id, active);
       const mon = isMonitored(i.vaccine.id, active);
       const done = recordsFor(active, i.vaccine.id).length;
-      if (i.status === "overdue" || i.status === "soon") {
+      if (i.status === "overdue") {
         due.push(i);
+      } else if (i.status === "soon") {
+        soon.push(i);
       } else if (i.status === "optional" && (travelC.length || mon) && done === 0) {
         rec.push({ item: i, countries: travelC, mon });
       } else if (i.status === "future" && i.next && i.next.dueDate) {
@@ -1038,9 +1358,12 @@
       }
     }
     due.sort((a, b) => (a.days ?? 0) - (b.days ?? 0));
+    soon.sort((a, b) => (a.days ?? 0) - (b.days ?? 0));
     upcoming.sort((a, b) => a.next.dueDate - b.next.dueDate);
+    const bald = upcoming.filter((i) => i.days < VORSCHAU_TAGE);
+    const spaeter = upcoming.filter((i) => i.days >= VORSCHAU_TAGE);
 
-    const actionable = due.length + rec.length;
+    const actionable = due.length + soon.length + rec.length;
     count.textContent = actionable;
     count.classList.toggle("hidden", actionable === 0);
 
@@ -1105,20 +1428,43 @@
         active.name
       )} ist aktuell keine Impfung fällig.</p></div>`;
     } else {
-      html += `
+      // Rot: der Termin ist vorbei. Nur hier besteht echter Rückstand.
+      if (due.length) {
+        html += `
         <div class="pass-section">
           <div class="pass-section-head" style="--group-color:#c0392b"><span>Jetzt fällig</span></div>
+          <div class="rem-group">${due.map(dueCard).join("")}</div>
+        </div>`;
+      }
+      /* Gelb: steht in den nächsten drei Monaten an. Reise- und
+         Überwachungs-Empfehlungen ohne festes Datum stehen ebenfalls hier —
+         sie sind zu planen, aber nicht überfällig. */
+      if (soon.length || rec.length) {
+        html += `
+        <div class="pass-section">
+          <div class="pass-section-head" style="--group-color:#c8901f"><span>Bald fällig</span></div>
           <div class="rem-group">${
-            due.map(dueCard).join("") + rec.map(recCard).join("")
+            soon.map(dueCard).join("") + rec.map(recCard).join("")
           }</div>
         </div>`;
+      }
     }
-    if (upcoming.length) {
+    if (bald.length) {
       html += `
         <div class="pass-section">
           <div class="pass-section-head" style="--group-color:#4a7ba6"><span>Kommende Impftermine</span></div>
-          <div class="upcoming-group">${upcoming.map(upcomingRow).join("")}</div>
+          <div class="upcoming-group">${bald.map(upcomingRow).join("")}</div>
         </div>`;
+    }
+    if (spaeter.length) {
+      html += `
+        <details class="pass-section upcoming-later">
+          <summary>
+            <span>Impftermine in 5 Jahren oder später</span>
+            <span class="later-count">${spaeter.length}</span>
+          </summary>
+          <div class="upcoming-group">${spaeter.map(upcomingRow).join("")}</div>
+        </details>`;
     }
 
     box.innerHTML = html;
@@ -2333,6 +2679,8 @@
     state.settings.setupDone = true;
     saveData();
     el("#setup-dialog").close();
+    // Auch beim Überspringen soll die Starthilfe erscheinen.
+    renderCoach();
   }
 
   /* ----------------------------------------------------------- Darstellung */
@@ -2382,12 +2730,24 @@
     document
       .querySelectorAll(".tab-panel")
       .forEach((p) => p.classList.toggle("active", p.id === "panel-" + name));
+    /* Der Einstellungsbereich hängt am Zahnrad, nicht an einem Tab — das
+       Zahnrad übernimmt deshalb die Rolle der aktiven Schaltfläche. */
+    const zahn = el("#btn-config");
+    if (zahn) zahn.classList.toggle("active", name === "config");
+    window.scrollTo({ top: 0 });
   }
 
   function setupTabs() {
     document.querySelectorAll(".tab").forEach((tab) => {
       tab.addEventListener("click", () => activateTab(tab.dataset.tab));
     });
+    const zahn = el("#btn-config");
+    if (zahn)
+      zahn.addEventListener("click", () =>
+        activateTab(
+          el("#panel-config").classList.contains("active") ? "pass" : "config"
+        )
+      );
   }
 
   /* ------------------------------------------------- Android-Zurück-Taste */
@@ -2422,6 +2782,7 @@
     "msg-dialog": "#msg-ok",
     "confirm-dialog": "#confirm-cancel",
     "notify-dialog": "#notify-cancel",
+    "book-dialog": "#book-cancel",
   };
   let lastBackPress = 0;
 
@@ -2434,6 +2795,7 @@
         state.settings.setupDone = true;
         saveData();
         dlg.close();
+        renderCoach();
       } else {
         const btn = BACK_CANCEL[dlg.id] && el(BACK_CANCEL[dlg.id]);
         if (btn) btn.click();
@@ -2441,7 +2803,14 @@
       }
       return "dialog";
     }
-    // 2) Nicht auf dem Impfpass-Tab? → dorthin zurück
+    /* 2) Einstellungsbereich offen? → zurück in den Impfpass. Er hängt an
+       keinem Tab, also findet ihn die Prüfung darunter nicht. */
+    const konfig = el("#panel-config");
+    if (konfig && konfig.classList.contains("active")) {
+      activateTab("pass");
+      return "tab";
+    }
+    // 3) Nicht auf dem Impfpass-Tab? → dorthin zurück
     const active = document.querySelector(".tab.active");
     if (active && active.dataset.tab !== "pass") {
       activateTab("pass");
@@ -2534,17 +2903,25 @@
     });
     el("#del-one").addEventListener("click", () => performDelete("one"));
     el("#del-all").addEventListener("click", () => performDelete("all"));
-    el("#btn-export").addEventListener("click", exportData);
+    /* Export, Import und Backup stehen zweimal in der App — unter „Profil"
+       und unter „Einstellungen". Deshalb über Klassen gebunden, nicht über
+       IDs; die dürfen nur einmal vorkommen. */
+    const alle = (sel, ereignis, fn) =>
+      document.querySelectorAll(sel).forEach((b) => b.addEventListener(ereignis, fn));
+    alle(".btn-export", "click", exportData);
     el("#export-go").addEventListener("click", doExport);
     el("#export-cancel").addEventListener("click", () =>
       el("#export-dialog").close()
     );
-    el("#btn-import").addEventListener("click", () => el("#import-file").click());
+    alle(".btn-import", "click", () => el("#import-file").click());
     el("#import-file").addEventListener("change", (e) => {
       if (e.target.files[0]) importData(e.target.files[0]);
       e.target.value = "";
     });
-    el("#btn-backup").addEventListener("click", openBackup);
+    alle(".btn-backup", "click", openBackup);
+    setupVaccineSearch();
+    el("#book-save").addEventListener("click", saveBookDialog);
+    el("#book-cancel").addEventListener("click", () => el("#book-dialog").close());
     el("#backup-go").addEventListener("click", doBackup);
     el("#backup-cancel").addEventListener("click", () =>
       el("#backup-dialog").close()
@@ -2587,7 +2964,9 @@
     el("#setup-dialog").addEventListener("cancel", () => {
       state.settings.setupDone = true;
       saveData();
+      renderCoach();
     });
+    el("#coach-ok").addEventListener("click", dismissCoach);
     el("#btn-rerun-setup").addEventListener("click", openSetup);
 
     // Premium & Werbung

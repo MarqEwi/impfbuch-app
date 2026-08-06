@@ -1810,6 +1810,312 @@ dialog#quick-dialog::backdrop {
 .details-body strong {
   color: var(--ink);
 }
+/* Starthilfe: Sprechblase unter dem Schnelleintrag, mit Spitze nach oben.
+   Bewusst im Textfluss statt schwebend — so verdeckt sie nichts und
+   verschiebt sich auf keinem Bildschirm an die falsche Stelle. */
+.coach {
+  /* Deckende Füllung mit kräftigem Rand. Bewusst feste Farben statt der
+     Theme-Variablen: heller Sprechblasen-Körper auf dunklem Rand hebt sich
+     in jeder der fünf Ansichten ab — auf gelbem Papier ebenso wie im
+     Dunkelmodus. */
+  --coach-bg: #fffdf4;
+  --coach-line: #2f2617;
+  --coach-ink: #241d10;
+
+  position: relative;
+  margin: 18px 0 4px;
+  padding: 14px 15px;
+  border: 2px solid var(--coach-line);
+  border-radius: 12px;
+  background: var(--coach-bg);
+  color: var(--coach-ink);
+  box-shadow: 0 3px 12px rgba(20, 15, 0, 0.32);
+}
+/* Spitze nach oben: zwei Dreiecke übereinander — das größere bildet den
+   Rand, das kleinere die Füllung und deckt die Randlinie ab. */
+.coach::before,
+.coach::after {
+  content: "";
+  position: absolute;
+  border: 11px solid transparent;
+  border-top: 0;
+}
+.coach::before {
+  bottom: 100%;
+  left: 28px;
+  border-bottom-color: var(--coach-line);
+}
+.coach::after {
+  bottom: calc(100% - 3px);
+  left: 30px;
+  border-width: 9px;
+  border-top: 0;
+  border-bottom-color: var(--coach-bg);
+}
+.coach-text {
+  margin: 0 0 11px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--coach-ink);
+}
+.coach-text strong {
+  color: #8a5a08;
+}
+/* Eigene Farben, damit die Schaltfläche auf dem hellen Blasenkörper in jeder
+   Ansicht lesbar bleibt. Mit `button` qualifiziert: die Farbwelten setzen
+   .btn-small später im Blatt und würden sonst gewinnen — in „Neutral" ergäbe
+   das schwarze Schrift auf dunkelbraunem Grund. */
+:root .coach button.coach-ok,
+:root .coach button.coach-ok:hover,
+:root .coach button.coach-ok:focus {
+  display: inline-block;
+  background: var(--coach-line);
+  border-color: var(--coach-line);
+  color: #fffdf4;
+}
+
+/* Suchfeld über dem Impfpass */
+.vac-search {
+  margin: 10px 0 14px;
+}
+.vac-search input {
+  width: 100%;
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--input-bg, var(--paper));
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
+}
+.vac-search input:focus {
+  outline: none;
+  border-color: var(--group-color, #c8901f);
+  box-shadow: 0 0 0 2px rgba(200, 144, 31, 0.25);
+}
+
+/* ------------------------------------------- Zahnrad im Kopfbereich */
+.app-header {
+  position: relative;
+}
+.btn-gear {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--ink);
+  cursor: pointer;
+}
+.btn-gear .ic {
+  width: 20px;
+  height: 20px;
+}
+.btn-gear.active {
+  background: var(--accent, #e8c25c);
+  border-color: var(--ink);
+}
+
+/* ----------------------------------------------------- Impfbuch-Regal */
+.book-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+.book {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+}
+.book.active {
+  border-color: var(--line-strong);
+  background: rgba(120, 115, 100, 0.08);
+}
+.book-art {
+  position: relative;
+  display: block;
+  width: 68px;
+}
+.book-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+/* Klassisches Benachrichtigungs-Abzeichen: roter Kreis, weiße Zahl, heller
+   Ring, damit es sich auch von einem dunklen Buchdeckel abhebt. */
+.book-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 11px;
+  background: #c0392b;
+  border: 2px solid var(--paper);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+.book-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* Dialog: Impfbuch anpassen */
+.book-edit {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.book-preview {
+  width: 92px;
+  flex: 0 0 auto;
+}
+.book-edit-right {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.book-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+.book-color {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--btn-border);
+  background: var(--farbe);
+  cursor: pointer;
+  padding: 0;
+}
+.book-color.active {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink);
+}
+.book-free {
+  font-size: 0.8rem;
+}
+
+/* Angaben im Impfbuch: kurze Felder paarweise nebeneinander, mehrzeilige
+   über die volle Breite. Die Beschriftung sitzt klein über dem Feld —
+   das hält die Spalten schmal und die Zeilen ruhig. */
+#book-fields {
+  display: grid;
+  /* 140 px, damit auch auf einem 375-px-Gerät zwei Spalten nebeneinander
+     passen (2 × 140 + 12 Abstand < verfügbare Breite). */
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+.book-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  min-width: 0;
+}
+.book-field.wide {
+  grid-column: 1 / -1;
+}
+.book-field-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  /* Platz für zwei Zeilen reservieren: lange Beschriftungen brechen um,
+     die Eingabefelder bleiben trotzdem auf gleicher Höhe. */
+  line-height: 1.15;
+  min-height: 2.3em;
+  display: flex;
+  align-items: flex-end;
+}
+.book-field input,
+.book-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--input-bg, var(--paper));
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.book-field textarea {
+  resize: vertical;
+  min-height: 46px;
+}
+.book-field input:focus,
+.book-field textarea:focus {
+  outline: none;
+  border-color: #c8901f;
+  box-shadow: 0 0 0 2px rgba(200, 144, 31, 0.25);
+}
+.book-field input::placeholder,
+.book-field textarea::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.6;
+}
+
+/* Fällig: eingeklappte Liste für Termine, die weit in der Zukunft liegen.
+   Bewusst zurückhaltender als eine Sektionsüberschrift — es ist Beiwerk,
+   keine Handlungsaufforderung. */
+.upcoming-later > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: rgba(120, 115, 100, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.upcoming-later > summary::-webkit-details-marker {
+  display: none;
+}
+.upcoming-later > summary::after {
+  content: "▸";
+  margin-left: auto;
+  transition: transform 0.15s;
+}
+.upcoming-later[open] > summary::after {
+  transform: rotate(90deg);
+}
+.upcoming-later[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+.later-count {
+  font-weight: 400;
+  font-size: 0.74rem;
+}
+
 /* Schnelleintrag: ausklappbare Sektion für früher übliche Impfungen */
 .q-historic {
   margin-top: 10px;

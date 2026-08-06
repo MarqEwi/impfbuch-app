@@ -622,10 +622,18 @@ const STIKO_SCHEDULE = [
     ageInfo:
       "Ab 2 Monaten. Zwei Dosen im Abstand von 28 Tagen; für Erwachsene von " +
       "18 bis 65 Jahren ist auch ein Schnellschema (Tag 0 und 7) möglich.",
+    /* Das RKI beschreibt zwei Auffrischungen: eine nach 12–24 Monaten und
+       eine weitere 10 Jahre danach. Was darüber hinaus gilt, sagt keine
+       Quelle — deshalb hier ein Hinweis statt einer erfundenen Vorgabe.
+       Rechnerisch führt die Gültigkeits-Überwachung den 10-Jahres-Takt fort
+       (VALID_YEARS.japanische_enzephalitis). */
     noBooster:
       "Nach den beiden Grunddosen folgt eine Auffrischung nach 12–24 Monaten " +
-      "(als 3. Impfung hinterlegt). Die zweite und letzte Auffrischung ist " +
-      "erst 10 Jahre danach vorgesehen — weitere sind nicht empfohlen.",
+      "(als 3. Impfung hinterlegt), eine weitere 10 Jahre danach. Für die " +
+      "Zeit darüber hinaus gibt es keine ausdrückliche Vorgabe. Die App " +
+      "rechnet dann weiter im Abstand von 10 Jahren, sobald du die " +
+      "Gültigkeit überwachen lässt. Bei anhaltendem Risiko vor der Reise " +
+      "ärztlich beraten lassen.",
     source: "reise",
     series: [
       { label: "1. Dosis", ageMonths: 12 * MONTH },

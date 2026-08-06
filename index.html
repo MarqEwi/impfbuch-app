@@ -13,6 +13,9 @@
   </head>
   <body>
     <header class="app-header">
+      <button class="btn-gear" id="btn-config" title="Einstellungen" aria-label="Einstellungen">
+        <span class="ic" data-icon="settings"></span>
+      </button>
       <div class="pass-cover">
         <h1 class="who-title">Impfbuch-App</h1>
 
@@ -46,6 +49,23 @@
           <span class="ic" data-icon="zap"></span>
           Schnelleintrag — mehrere Impfungen an einem Tag
         </button>
+        <div id="coach" class="coach hidden" role="status">
+          <p class="coach-text" id="coach-text"></p>
+          <button type="button" class="btn btn-small coach-ok" id="coach-ok">
+            Verstanden
+          </button>
+        </div>
+        <div class="vac-search">
+          <label class="sr-only" for="vac-search-input">Impfung suchen</label>
+          <input
+            id="vac-search-input"
+            list="vac-search-list"
+            type="search"
+            placeholder="Impfung suchen oder auswählen …"
+            autocomplete="off"
+          />
+          <datalist id="vac-search-list"></datalist>
+        </div>
         <div id="pass-pages"></div>
         <p class="disclaimer">
           Hinweis: Diese App ersetzt nicht den amtlichen Impfausweis und keine
@@ -120,6 +140,47 @@
           </p>
         </div>
 
+        <h2 class="panel-title">Impfbücher</h2>
+        <div class="form-card">
+          <p class="hint">
+            Jede Person hat ihr eigenes Impfbuch. Tippe darauf, um Farbe und
+            persönliche Angaben zu ändern. Die rote Zahl zeigt, wie viele
+            Impfungen dort gerade anstehen.
+          </p>
+          <div id="book-shelf" class="book-shelf"></div>
+        </div>
+
+        <h2 class="panel-title">Daten</h2>
+        <div class="form-card">
+          <p class="hint">
+            Alle Daten werden ausschließlich lokal auf diesem Gerät gespeichert.
+          </p>
+          <div class="btn-row">
+            <button class="btn btn-export">
+              <span class="ic" data-icon="upload"></span> Exportieren
+            </button>
+            <button class="btn btn-import">
+              <span class="ic" data-icon="download"></span> Importieren
+            </button>
+          </div>
+          <button class="btn btn-backup">
+            <span class="ic" data-icon="archive"></span> Backup erstellen
+          </button>
+          <p class="hint">
+            Speichert ausgewählte Profile oder alles inkl. Einstellungen als
+            eine Backup-Datei. Wiederherstellen später über „Importieren".
+          </p>
+        </div>
+
+        <h2 class="panel-title">Ausgeblendete Impfungen</h2>
+        <div class="form-card">
+          <div id="hidden-manager"></div>
+        </div>
+
+      </section>
+
+      <!-- Bereich: Einstellungen (über das Zahnrad im Kopf erreichbar) -->
+      <section id="panel-config" class="tab-panel">
         <h2 class="panel-title">Premium</h2>
         <div class="form-card">
           <button class="btn btn-premium" id="btn-premium">
@@ -130,11 +191,6 @@
             Beliebig viele Profile und länderspezifische Reiseempfehlungen
             freischalten.
           </p>
-        </div>
-
-        <h2 class="panel-title">Ausgeblendete Impfungen</h2>
-        <div class="form-card">
-          <div id="hidden-manager"></div>
         </div>
 
         <h2 class="panel-title">Erinnerungen</h2>
@@ -154,15 +210,15 @@
             Alle Daten werden ausschließlich lokal auf diesem Gerät gespeichert.
           </p>
           <div class="btn-row">
-            <button class="btn" id="btn-export">
+            <button class="btn btn-export">
               <span class="ic" data-icon="upload"></span> Exportieren
             </button>
-            <button class="btn" id="btn-import">
+            <button class="btn btn-import">
               <span class="ic" data-icon="download"></span> Importieren
             </button>
           </div>
           <input type="file" id="import-file" accept="application/json" hidden />
-          <button class="btn" id="btn-backup">
+          <button class="btn btn-backup">
             <span class="ic" data-icon="archive"></span> Backup erstellen
           </button>
           <p class="hint">
@@ -359,6 +415,34 @@
         </div>
       </section>
     </main>
+
+    <!-- Dialog: Impfbuch anpassen -->
+    <dialog id="book-dialog">
+      <form method="dialog">
+        <h3 id="book-dlg-title">Impfbuch</h3>
+        <div class="book-edit">
+          <div id="book-preview" class="book-preview"></div>
+          <div class="book-edit-right">
+            <div class="setting-title">Farbe</div>
+            <div id="book-colors" class="book-colors"></div>
+            <label class="book-free">
+              Eigene Farbe
+              <input type="color" id="book-color-free" value="#d9a520" />
+            </label>
+          </div>
+        </div>
+        <hr class="divider" />
+        <p class="hint">
+          Alle folgenden Angaben sind freiwillig. Sie bleiben auf diesem Gerät
+          und fließen in keine Berechnung ein.
+        </p>
+        <div id="book-fields"></div>
+        <div class="dlg-actions">
+          <button type="button" class="btn" id="book-cancel">Abbrechen</button>
+          <button type="button" class="btn btn-primary" id="book-save">Speichern</button>
+        </div>
+      </form>
+    </dialog>
 
     <!-- Dialog: Impfung eintragen -->
     <dialog id="record-dialog">
