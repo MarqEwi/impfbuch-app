@@ -101,6 +101,13 @@ const STIKO_SCHEDULE = [
       "(Nirsevimab). Sie schützt Neugeborene und Säuglinge in ihrer ersten " +
       "RSV-Saison — RS-Viren sind der häufigste Grund für " +
       "Krankenhausaufenthalte im ersten Lebensjahr.",
+    diseaseTitle: "Was sind RS-Viren?",
+    disease:
+      "RS-Viren lösen Erkältungen und Atemwegsinfekte aus. Sie " +
+      "verbreiten sich über Tröpfchen beim Husten und Niesen sowie über " +
+      "Hände und Oberflächen. Fast alle Kinder stecken sich in den " +
+      "ersten beiden Lebensjahren an; bei Säuglingen können die kleinen " +
+      "Atemwege dabei anschwellen.",
     ageInfo:
       "Einmalig für alle Neugeborenen und Säuglinge in der ersten RSV-Saison " +
       "(Herbst/Winter). Versäumtes bis zum 1. Geburtstag nachholen.",
@@ -118,6 +125,11 @@ const STIKO_SCHEDULE = [
     fullName: "Rotavirus-Gastroenteritis (Schluckimpfung)",
     group: "basis",
     info: "Erste Dosis ab einem Alter von 6 Wochen, Impfserie früh abschließen.",
+    diseaseTitle: "Was sind Rotaviren?",
+    disease:
+      "Rotaviren verursachen Brechdurchfall bei Säuglingen und " +
+      "Kleinkindern. Sie sind sehr ansteckend und werden über Spuren " +
+      "von Stuhl an Händen, Spielzeug oder Lebensmitteln übertragen.",
     ageInfo:
       "Beginn ab 6 Wochen, möglichst bis zum Alter von 12 Wochen. Je nach " +
       "Impfstoff 2 oder 3 Schluckdosen. Die Serie muss spätestens mit 24 " +
@@ -136,6 +148,12 @@ const STIKO_SCHEDULE = [
     fullName: "Wundstarrkrampf (Tetanus)",
     group: "basis",
     info: "Grundimmunisierung als Säugling, Auffrischungen im Kindes-/Jugendalter, danach alle 10 Jahre.",
+    diseaseTitle: "Was ist Wundstarrkrampf?",
+    disease:
+      "Die Bakterien stecken in Erde und Staub und gelangen über Wunden " +
+      "in den Körper — oft über kleine Verletzungen bei der " +
+      "Gartenarbeit. Ihr Gift führt zu schmerzhaften Muskelkrämpfen. " +
+      "Von Mensch zu Mensch ist die Krankheit nicht übertragbar.",
     ageInfo:
       "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Auffrischungen mit 5–6 und 9–16 Jahren, danach lebenslang alle 10 Jahre.",
     source: "kalender",
@@ -159,6 +177,11 @@ const STIKO_SCHEDULE = [
     fullName: "Diphtherie",
     group: "basis",
     info: "Grundimmunisierung als Säugling, Auffrischungen im Kindes-/Jugendalter, danach alle 10 Jahre.",
+    diseaseTitle: "Was ist Diphtherie?",
+    disease:
+      "Eine bakterielle Infektion vor allem im Hals- und Rachenraum, " +
+      "die über Tröpfchen beim Husten und Sprechen weitergegeben wird. " +
+      "Das Bakteriengift kann auch Herz und Nerven belasten.",
     ageInfo:
       "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Auffrischungen mit 5–6 und 9–16 Jahren, danach lebenslang alle 10 Jahre — meist zusammen mit Tetanus.",
     source: "kalender",
@@ -182,6 +205,12 @@ const STIKO_SCHEDULE = [
     fullName: "Keuchhusten (Pertussis)",
     group: "basis",
     info: "Grundimmunisierung als Säugling, Auffrischungen im Kindes-/Jugendalter; im Erwachsenenalter einmalig mit der nächsten Td-Auffrischung (als Tdap).",
+    diseaseTitle: "Was ist Keuchhusten?",
+    disease:
+      "Eine bakterielle Infektion der Atemwege mit wochenlangen, " +
+      "anfallsartigen Hustenattacken. Sie ist hoch ansteckend und wird " +
+      "über Tröpfchen übertragen — Erwachsene stecken oft unbemerkt " +
+      "Säuglinge an.",
     ageInfo:
       "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Auffrischungen mit 5–6 und 9–16 Jahren. Erwachsene frischen einmalig zusammen mit der nächsten Tetanus-Impfung auf. Schwangere sollen in jeder Schwangerschaft im letzten Drittel geimpft werden.",
     source: "kalender",
@@ -199,6 +228,11 @@ const STIKO_SCHEDULE = [
     fullName: "Kinderlähmung (Poliomyelitis)",
     group: "basis",
     info: "Grundimmunisierung als Säugling, Auffrischung im Jugendalter. Im Erwachsenenalter nur bei Reisen in Endemiegebiete auffrischen.",
+    diseaseTitle: "Was ist Kinderlähmung?",
+    disease:
+      "Viren, die über verunreinigtes Wasser oder Spuren von Stuhl " +
+      "aufgenommen werden. Meist verläuft die Infektion harmlos, in " +
+      "seltenen Fällen kommt es zu bleibenden Lähmungen.",
     ageInfo:
       "Grundimmunisierung als Säugling (2, 4, 11 Monate), eine Auffrischung " +
       "im Alter von 9–16 Jahren. Fehlendes ist lebenslang nachholbar.",
@@ -220,6 +254,11 @@ const STIKO_SCHEDULE = [
     fullName: "Haemophilus influenzae Typ b",
     group: "basis",
     info: "Nur im Säuglingsalter nötig (Teil der 6-fach-Impfung).",
+    diseaseTitle: "Was ist Hib?",
+    disease:
+      "Haemophilus influenzae Typ b sind Bakterien, die über Tröpfchen " +
+      "übertragen werden. Bei kleinen Kindern können sie eine Hirnhaut- " +
+      "oder Kehldeckelentzündung auslösen.",
     ageInfo:
       "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Ab 5 Jahren ist die Impfung bei gesunden Kindern nicht mehr nötig.",
     source: "kalender",
@@ -231,6 +270,11 @@ const STIKO_SCHEDULE = [
     fullName: "Hepatitis B",
     group: "basis",
     info: "Bei Kindern in der 6-fach-Impfung enthalten; für Erwachsene mit erhöhtem Risiko nachholbar.",
+    diseaseTitle: "Was ist Hepatitis B?",
+    disease:
+      "Eine Virusinfektion der Leber. Übertragen wird sie über Blut und " +
+      "andere Körperflüssigkeiten, auch bei der Geburt von der Mutter " +
+      "auf das Kind. Bei Säuglingen wird sie besonders oft chronisch.",
     ageInfo:
       "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Versäumtes wird bis zum 18. Geburtstag nachgeholt. Für Erwachsene ist es dann keine Standard-, sondern eine Indikationsimpfung (z. B. bei bestimmten Berufen).",
     source: "kalender",
@@ -242,6 +286,11 @@ const STIKO_SCHEDULE = [
     fullName: "Pneumokokken-Konjugatimpfstoff (PCV)",
     group: "basis",
     info: "Grundimmunisierung im Säuglingsalter (2+1-Schema).",
+    diseaseTitle: "Was sind Pneumokokken?",
+    disease:
+      "Bakterien, die viele Menschen im Nasen-Rachen-Raum tragen und " +
+      "über Tröpfchen weitergeben. Sie können Mittelohr-, Lungen- und " +
+      "Hirnhautentzündungen verursachen.",
     ageInfo:
       "Mit 2, 4 und 11 Monaten (Frühgeborene zusätzlich mit 3 Monaten). Ab 24 Monaten ist die Impfung nicht mehr als Standardimpfung empfohlen und wird auch nicht nachgeholt.",
     source: "kalender",
@@ -253,6 +302,12 @@ const STIKO_SCHEDULE = [
     fullName: "Meningokokken der Serogruppe B",
     group: "basis",
     info: "Seit 2024 als Standardimpfung empfohlen.",
+    diseaseTitle: "Was sind Meningokokken?",
+    disease:
+      "Bakterien, die über Tröpfchen und engen Kontakt übertragen " +
+      "werden. Sie sind selten, können aber innerhalb von Stunden eine " +
+      "Hirnhautentzündung oder Blutvergiftung auslösen. Die Gruppe B " +
+      "ist in Deutschland die häufigste.",
     ageInfo:
       "Mit 2, 4 und 12 Monaten. Versäumtes soll spätestens bis zum 5. Geburtstag nachgeholt werden; danach besteht keine Standardempfehlung mehr.",
     source: "meningokokken_b",
@@ -275,6 +330,12 @@ const STIKO_SCHEDULE = [
       "empfohlen. Erkrankungen durch die Serogruppe C sind in Deutschland sehr " +
       "selten geworden. An ihre Stelle ist die Impfung gegen Meningokokken " +
       "ACWY mit 12–14 Jahren getreten.",
+    diseaseTitle: "Was sind Meningokokken?",
+    disease:
+      "Bakterien, die über Tröpfchen und engen Kontakt übertragen " +
+      "werden und eine Hirnhautentzündung oder Blutvergiftung auslösen " +
+      "können. Erkrankungen durch die Gruppe C sind in Deutschland " +
+      "inzwischen sehr selten.",
     ageInfo:
       "Früher: einmalig im 2. Lebensjahr. Heute keine Standardimpfung mehr — " +
       "bereits erhaltene Impfungen bleiben hier dokumentiert.",
@@ -291,6 +352,12 @@ const STIKO_SCHEDULE = [
     fullName: "Masern, Mumps, Röteln (MMR)",
     group: "kind",
     info: "Zwei Dosen; für nach 1970 Geborene ohne ausreichenden Schutz empfohlen.",
+    diseaseTitle: "Was sind Masern, Mumps und Röteln?",
+    disease:
+      "Drei Virusinfektionen. Masern sind extrem ansteckend und " +
+      "verbreiten sich über die Luft — auch ohne direkten Kontakt. " +
+      "Mumps und Röteln werden über Tröpfchen übertragen; Röteln sind " +
+      "vor allem in der Schwangerschaft gefährlich.",
     ageInfo:
       "Zwei Dosen mit 11 und 15 Monaten (Mindestabstand 4 Wochen). Es gibt KEINE obere Altersgrenze: Fehlendes kann in jedem Alter nachgeholt werden. Alle nach 1970 Geborenen ab 18 Jahren mit unklarem Impfstatus sollen einmalig eine MMR-Impfung erhalten.",
     source: "kalender",
@@ -305,6 +372,12 @@ const STIKO_SCHEDULE = [
     fullName: "Windpocken (Varizellen)",
     group: "kind",
     info: "Zwei Dosen, meist parallel zur MMR-Impfung.",
+    diseaseTitle: "Was sind Windpocken?",
+    disease:
+      "Eine sehr ansteckende Virusinfektion mit juckendem Ausschlag, " +
+      "die schon über die Luft übertragen wird. Das Virus bleibt danach " +
+      "lebenslang im Körper und kann Jahrzehnte später als Gürtelrose " +
+      "zurückkehren.",
     ageInfo:
       "Zwei Dosen mit 11 und 15 Monaten. Bei Kindern und Jugendlichen ohne Windpocken-Erkrankung jederzeit nachholbar.",
     source: "kalender",
@@ -321,6 +394,12 @@ const STIKO_SCHEDULE = [
     fullName: "Humane Papillomviren",
     group: "jugend",
     info: "Für alle Jugendlichen; 2 Dosen bei Beginn im Alter von 9–14 Jahren.",
+    diseaseTitle: "Was sind humane Papillomviren?",
+    disease:
+      "Sehr verbreitete Viren, die beim Haut- und Schleimhautkontakt " +
+      "übertragen werden, meist beim Sex. Die meisten Infektionen " +
+      "heilen von selbst; manche Virustypen können nach Jahren Krebs " +
+      "auslösen — etwa am Gebärmutterhals, aber auch bei Männern.",
     ageInfo:
       "Für alle Kinder und Jugendlichen von 9 bis 14 Jahren — Mädchen wie " +
       "Jungen. In diesem Alter genügen 2 Dosen im Abstand von mindestens 5 " +
@@ -340,6 +419,12 @@ const STIKO_SCHEDULE = [
     fullName: "Saisonale Influenza",
     group: "senior",
     info: "Jährlich für Personen ab 60 Jahren (Impfung im Herbst).",
+    diseaseTitle: "Was ist die echte Grippe?",
+    disease:
+      "Eine Virusinfektion, die über Tröpfchen in der Luft übertragen " +
+      "wird. Anders als eine Erkältung beginnt sie meist plötzlich mit " +
+      "hohem Fieber. Die Viren verändern sich jedes Jahr, deshalb wird " +
+      "jährlich neu geimpft.",
     ageInfo:
       "Jährlich ab 60 Jahren, am besten im Herbst. Für Schwangere, chronisch Kranke und medizinisches Personal gilt sie unabhängig vom Alter. Ab 60 wird ein Hochdosis-Impfstoff verwendet.",
     source: "kalender",
@@ -352,6 +437,10 @@ const STIKO_SCHEDULE = [
     fullName: "Pneumokokken-Impfung im Alter",
     group: "senior",
     info: "Einmalige Impfung für Personen ab 60 Jahren.",
+    diseaseTitle: "Was sind Pneumokokken?",
+    disease:
+      "Bakterien, die über Tröpfchen übertragen werden und vor allem im " +
+      "höheren Alter Lungenentzündungen verursachen können.",
     ageInfo:
       "Einmalig ab 60 Jahren mit dem 20-fach-Konjugatimpfstoff (PCV20).",
     noBooster:
@@ -367,6 +456,12 @@ const STIKO_SCHEDULE = [
     fullName: "Herpes zoster — Totimpfstoff",
     group: "senior",
     info: "Zwei Dosen für Personen ab 60 Jahren (Abstand 2–6 Monate).",
+    diseaseTitle: "Was ist Gürtelrose?",
+    disease:
+      "Sie entsteht, wenn das Windpocken-Virus nach Jahrzehnten im " +
+      "Körper wieder aktiv wird — meist an einer Körperhälfte als " +
+      "schmerzhafter Ausschlag. Die Nervenschmerzen können lange " +
+      "anhalten.",
     ageInfo:
       "Zwei Dosen ab 60 Jahren im Abstand von 2–6 Monaten. Bei Immunschwäche oder schweren chronischen Erkrankungen schon ab 18 Jahren.",
     source: "kalender",
@@ -385,6 +480,11 @@ const STIKO_SCHEDULE = [
       "Seit Juli 2026 als Standardimpfung jährlich ab 75 Jahren empfohlen. " +
       "Die frühere Empfehlung, zunächst eine Basisimmunität aufzubauen, ist " +
       "entfallen.",
+    diseaseTitle: "Was ist COVID-19?",
+    disease:
+      "Eine Infektion mit Coronaviren, die über Tröpfchen und feine " +
+      "Schwebeteilchen in der Luft übertragen wird, besonders in " +
+      "Innenräumen.",
     ageInfo:
       "Jährlich ab 75 Jahren. Für Menschen mit Vorerkrankungen oder erhöhtem " +
       "Risiko gilt die Empfehlung unabhängig vom Alter — bitte ärztlich klären.",
@@ -403,6 +503,12 @@ const STIKO_SCHEDULE = [
     info:
       "Einmalige Impfung gegen RS-Viren für alle ab 75 Jahren. RSV verläuft im " +
       "höheren Alter häufig schwer.",
+    diseaseTitle: "Was sind RS-Viren?",
+    disease:
+      "Erreger von Atemwegsinfekten, die über Tröpfchen und Hände " +
+      "übertragen werden. Im höheren Alter können sie zu schweren " +
+      "Verläufen führen und bestehende Herz- oder Lungenerkrankungen " +
+      "verschlechtern.",
     ageInfo:
       "Einmalig ab 75 Jahren, möglichst im Spätsommer oder Herbst vor der " +
       "RSV-Saison. Zwischen 60 und 74 Jahren bei schweren Vorerkrankungen oder " +
@@ -424,6 +530,12 @@ const STIKO_SCHEDULE = [
     fullName: "Frühsommer-Meningoenzephalitis",
     group: "indikation",
     info: "Bei Aufenthalt in Risikogebieten; nach Grundimmunisierung Auffrischung alle 3–5 Jahre.",
+    diseaseTitle: "Was ist FSME?",
+    disease:
+      "Ein Virus, das durch Zeckenstiche übertragen wird und Hirnhaut " +
+      "und Gehirn entzünden kann. Es kommt nur in bestimmten Regionen " +
+      "vor — in Deutschland vor allem im Süden. Nicht jede Zecke trägt " +
+      "das Virus.",
     ageInfo:
       "Ab 12 Monaten, empfohlen bei Aufenthalt in Risikogebieten. Drei Dosen: " +
       "die zweite nach 1–3 Monaten, die dritte je nach Impfstoff 5–12 Monate " +
@@ -446,6 +558,12 @@ const STIKO_SCHEDULE = [
     fullName: "Hepatitis A (Reise-/Indikationsimpfung)",
     group: "indikation",
     info: "Vor Reisen in Regionen mit erhöhtem Risiko; zweite Dosis für langjährigen Schutz.",
+    diseaseTitle: "Was ist Hepatitis A?",
+    disease:
+      "Eine Virusinfektion der Leber, die über verunreinigtes Wasser, " +
+      "Lebensmittel oder Spuren von Stuhl an Händen übertragen wird. " +
+      "Typisch für Reisen in Länder mit einfacheren hygienischen " +
+      "Verhältnissen.",
     ageInfo:
       "Ab 12 Monaten. Zwei Dosen im Abstand von 6–12 Monaten geben " +
       "langjährigen Schutz.",
@@ -470,6 +588,11 @@ const STIKO_SCHEDULE = [
     group: "speziell",
     info: "Für viele Länder Pflicht (Nachweis im gelben Ausweis). Meist lebenslanger Schutz nach einer Impfung; nur in zugelassenen Gelbfieber-Impfstellen.",
 
+    diseaseTitle: "Was ist Gelbfieber?",
+    disease:
+      "Eine Virusinfektion, die von Mücken übertragen wird und in " +
+      "Teilen Afrikas und Südamerikas vorkommt. Schwere Verläufe " +
+      "belasten Leber und Nieren.",
     ageInfo:
       "Ab 9 Monaten. Eine Dosis genügt. Unter 6 Monaten darf nicht geimpft " +
       "werden, zwischen 6 und 8 Monaten nur ausnahmsweise.",
@@ -490,6 +613,11 @@ const STIKO_SCHEDULE = [
     fullName: "Japanische Enzephalitis (JE)",
     group: "speziell",
     info: "Für Reisen in Endemiegebiete Asiens; Auffrischung vor erneuter Exposition.",
+    diseaseTitle: "Was ist Japanische Enzephalitis?",
+    disease:
+      "Ein Virus, das von Mücken übertragen wird — vor allem in " +
+      "ländlichen Gebieten Asiens, oft in der Nähe von Reisfeldern. " +
+      "Selten, kann aber das Gehirn entzünden.",
     ageInfo:
       "Ab 2 Monaten. Zwei Dosen im Abstand von 28 Tagen; für Erwachsene von " +
       "18 bis 65 Jahren ist auch ein Schnellschema (Tag 0 und 7) möglich.",
@@ -511,6 +639,12 @@ const STIKO_SCHEDULE = [
     fullName: "Tollwut (Rabies) — präexpositionell",
     group: "speziell",
     info: "Vorsorgliche Impfung bei Reisen/Tätigkeiten mit Expositionsrisiko (3 Dosen).",
+    diseaseTitle: "Was ist Tollwut?",
+    disease:
+      "Ein Virus, das über den Speichel infizierter Tiere übertragen " +
+      "wird, meist durch Biss oder Kratzer — etwa von Hunden, Katzen " +
+      "oder Fledermäusen. Sobald Beschwerden auftreten, verläuft sie " +
+      "tödlich; eine sofortige Behandlung nach dem Kontakt schützt.",
     ageInfo:
       "Keine Altersgrenze — ab Geburt möglich. Grundimmunisierung mit 3 Dosen " +
       "an Tag 0, 7 und 21 (oder 28). Bei gesunder Immunabwehr ist auch ein " +
@@ -536,6 +670,11 @@ const STIKO_SCHEDULE = [
     fullName: "Typhus abdominalis",
     group: "speziell",
     info: "Reiseimpfung bei erhöhtem Risiko; Schutz ca. 3 Jahre, dann Auffrischung.",
+    diseaseTitle: "Was ist Typhus?",
+    disease:
+      "Eine bakterielle Infektion, die über verunreinigtes Wasser und " +
+      "Lebensmittel aufgenommen wird und über Tage steigendes, hohes " +
+      "Fieber verursacht.",
     ageInfo:
       "Spritze (Typhim Vi) ab 2 Jahren, Schluckimpfung (Typhoral L) ab 5 " +
       "Jahren. Die Schluckimpfung besteht aus 3 Kapseln an Tag 1, 3 und 5.",
@@ -557,6 +696,12 @@ const STIKO_SCHEDULE = [
       "Seit 2026 Standardimpfung für alle Jugendlichen: eine Dosis eines " +
       "Vierfach-Konjugatimpfstoffs im Alter von 12–14 Jahren. Sie ersetzt die " +
       "frühere Meningokokken-C-Impfung im Kleinkindalter.",
+    diseaseTitle: "Was sind Meningokokken?",
+    disease:
+      "Bakterien, die über Tröpfchen und engen Kontakt übertragen " +
+      "werden. Sie können plötzlich eine Hirnhautentzündung oder " +
+      "Blutvergiftung auslösen. Diese Impfung deckt die vier Gruppen A, " +
+      "C, W und Y ab.",
     ageInfo:
       "Einmalig mit 12–14 Jahren, unabhängig vom bisherigen Impfstatus. " +
       "Versäumte Impfungen bis zum 25. Geburtstag nachholen.",
@@ -578,6 +723,11 @@ const STIKO_SCHEDULE = [
     fullName: "Cholera (Schluckimpfung)",
     group: "speziell",
     info: "Reiseimpfung bei erhöhtem Risiko (2 Dosen).",
+    diseaseTitle: "Was ist Cholera?",
+    disease:
+      "Eine bakterielle Infektion aus verunreinigtem Wasser oder " +
+      "Lebensmitteln, die zu heftigem, wässrigem Durchfall führt. Sie " +
+      "tritt vor allem dort auf, wo sauberes Trinkwasser fehlt.",
     ageInfo:
       "Schluckimpfung ab 2 Jahren. Erwachsene und Kinder ab 6 Jahren: 2 Dosen " +
       "im Abstand von 1–6 Wochen. Kinder von 2 bis unter 6 Jahren brauchen 3 " +

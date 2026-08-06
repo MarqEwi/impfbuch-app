@@ -846,7 +846,14 @@
         <div class="verdict-text">${esc(v.text)}</div>
       </div>
       ${hiddenBlock}
-      <div class="info-section"><h4>Was ist das?</h4><p>${esc(vac.info)}</p></div>
+      ${
+        vac.disease
+          ? `<div class="info-section info-disease"><h4>${esc(
+              vac.diseaseTitle || "Die Krankheit"
+            )}</h4><p>${esc(vac.disease)}</p></div>`
+          : ""
+      }
+      <div class="info-section"><h4>Empfehlung</h4><p>${esc(vac.info)}</p></div>
       ${
         vac.ageInfo
           ? `<div class="info-section info-age"><h4>Für wen und ab welchem Alter</h4><p>${esc(
