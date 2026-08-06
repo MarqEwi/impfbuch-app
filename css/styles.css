@@ -1767,6 +1767,31 @@ dialog#quick-dialog::backdrop {
 .details-body strong {
   color: var(--ink);
 }
+/* Info-Fenster: Altersangabe, „keine Auffrischung"-Begründung, Quelle */
+.info-age {
+  background: rgba(58, 90, 140, 0.09);
+  border-left: 4px solid var(--stamp-blue);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.info-nobooster {
+  background: rgba(224, 138, 30, 0.1);
+  border-left: 4px solid var(--soon);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.info-source {
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+}
+.info-source p {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.info-source a {
+  word-break: break-word;
+}
+
 /* Behörden-Klarstellung (Play-Richtlinie „irreführende Behauptungen") */
 .notice-gov {
   background: rgba(58, 90, 140, 0.1);

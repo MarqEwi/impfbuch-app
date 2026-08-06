@@ -12,6 +12,7 @@
     INFANT_ONLY,
     CATCHUP_NOTES,
     VALID_YEARS,
+    SOURCES,
     vaccineNameById,
   } = window.STIKO;
   const COUNTRIES = (window.TRAVEL && window.TRAVEL.COUNTRIES) || [];
@@ -600,11 +601,18 @@
 
   /* ------------------------------------------------- Impfungen aus-/einblenden */
 
-  // Ist die Impfung im aktuellen Alter (ohne Doku) nicht mehr empfohlen?
+  /*
+   * Wird die Impfung aktuell nicht (mehr) empfohlen? Dann klappt sie die App
+   * automatisch ein und erzeugt keine Fälligkeit mehr. Zwei Fälle:
+   *  - `retired`: Empfehlung wurde zurückgezogen (z. B. Meningokokken C)
+   *  - Alter über der Obergrenze aus MAX_AGE_YEARS
+   * Bereits dokumentierte Impfungen bleiben immer normal sichtbar.
+   */
   function isAgeNotRecommended(vac, profile, doneCount) {
+    if (doneCount) return false; // bereits dokumentiert → normal anzeigen
+    if (vac.retired) return true;
     const maxY = INFANT_ONLY[vac.id];
     if (maxY == null) return false;
-    if (doneCount) return false; // bereits dokumentiert → normal anzeigen
     const birth = parseDate(profile.birthdate);
     if (!birth) return false;
     return ageInMonths(birth, new Date()) / 12 > maxY;
@@ -653,8 +661,11 @@
     const s = profile.vstate && profile.vstate[vac.id];
     if (s === "collapsed" || s === "hidden") return "Von dir ausgeblendet";
     const done = recordsFor(profile, vac.id).length;
-    if (isAgeNotRecommended(vac, profile, done))
+    if (isAgeNotRecommended(vac, profile, done)) {
+      if (vac.retired)
+        return "Automatisch ausgeblendet — diese Impfung wird nicht mehr empfohlen";
       return "Automatisch ausgeblendet, da in deinem Alter nicht mehr empfohlen";
+    }
     return "";
   }
 
@@ -806,6 +817,17 @@
       showNext && item.next && item.next.dueDate
         ? ` · nächste empfohlen: ${fmtDate(item.next.dueDate)}`
         : "";
+    // Quellenangabe: verlinkt die amtliche Empfehlung, auf der die Angaben beruhen.
+    const src = (SOURCES && SOURCES[vac.source]) || (SOURCES && SOURCES.kalender);
+    const sourceBlock = src
+      ? `<div class="info-section info-source">
+           <h4>Quelle</h4>
+           <p>Grundlage dieser Angaben:
+             <a href="${esc(src.url)}" target="_blank" rel="noopener">${esc(src.label)}</a>.
+             Stand der hinterlegten Daten: Impfkalender 2026.
+           </p>
+         </div>`
+      : "";
     const reason = hiddenReason(vac, activeProfile());
     const hiddenBlock =
       dstate !== "shown" && reason
@@ -825,7 +847,21 @@
       </div>
       ${hiddenBlock}
       <div class="info-section"><h4>Was ist das?</h4><p>${esc(vac.info)}</p></div>
+      ${
+        vac.ageInfo
+          ? `<div class="info-section info-age"><h4>Für wen und ab welchem Alter</h4><p>${esc(
+              vac.ageInfo
+            )}</p></div>`
+          : ""
+      }
       ${catchup ? `<div class="info-section"><h4>Nachholen</h4><p>${esc(catchup)}</p></div>` : ""}
+      ${
+        vac.noBooster
+          ? `<div class="info-section info-nobooster"><h4>Warum die App hier keine Auffrischung anzeigt</h4><p>${esc(
+              vac.noBooster
+            )}</p></div>`
+          : ""
+      }
       ${vac.riskNote ? `<div class="info-section"><h4>Hinweis</h4><p>${esc(vac.riskNote)}</p></div>` : ""}
       ${
         schema || extra.length
@@ -833,7 +869,8 @@
           : ""
       }
       <div class="info-section"><h4>Dein Stand</h4><p>${item.doneCount} Impfung(en) dokumentiert${nextInfo}.</p></div>
-      <p class="info-disclaimer">Angaben orientieren sich am STIKO-Impfkalender und ersetzen keine ärztliche Beratung.</p>`;
+      ${sourceBlock}
+      <p class="info-disclaimer">Diese Angaben ersetzen keine ärztliche Beratung. Maßgeblich ist immer die oben verlinkte Originalquelle.</p>`;
     el("#info-dialog").showModal();
   }
 

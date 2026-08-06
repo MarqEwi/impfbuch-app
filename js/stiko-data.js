@@ -1,6 +1,16 @@
 /*
  * STIKO-Impfschema (Standardimpfungen) — orientiert am Impfkalender der
- * Ständigen Impfkommission (RKI), Stand 2023/2024, plus Reise-/Berufsimpfungen.
+ * Ständigen Impfkommission (RKI).
+ *
+ * STAND: Impfkalender 2026 (Epid. Bulletin 4/2026 vom 22.01.2026), inklusive
+ * der COVID-19-Aktualisierung vom 09.07.2026 (Epid. Bulletin 28/2026) und der
+ * Meningokokken-Änderung vom 30.10.2025. Reise-/Indikationsimpfungen nach
+ * Epid. Bulletin 27/2026 (STIKO und DTG).
+ *
+ * PFLEGEHINWEIS: Die STIKO aktualisiert ihre Empfehlungen jährlich im Januar
+ * (Epidemiologisches Bulletin) und zusätzlich unterjährig. Dieses Schema
+ * deshalb mindestens einmal im Jahr gegen die Originalquellen prüfen — die
+ * Links dazu stehen in SOURCES und werden im Info-Fenster angezeigt.
  *
  * Wie im echten Impfausweis ist JEDE Krankheit eine eigene Zeile (z. B. Tetanus,
  * Pertussis, Poliomyelitis). Kombinationsimpfstoffe (6-fach, Tdap-IPV, MMRV …)
@@ -18,10 +28,50 @@
  *             Nichts". Erst wenn eine Serie begonnen wurde, wird an die Folgedosis
  *             erinnert. Ohne Eintrag Status „Bei Bedarf".
  *   riskNote  optional Hinweis zur Indikation
+ *   ageInfo   Klartext: für wen und in welchem Alter empfohlen (Info-Fenster)
+ *   source    Schlüssel aus SOURCES → Quellenangabe im Info-Fenster
+ *   noBooster Begründung, warum die App KEINE Auffrischung anzeigt
+ *   retired   true → Empfehlung wurde zurückgezogen; bleibt dokumentierbar,
+ *             wird aber nicht mehr als fällig angezeigt (mit Begründung)
  */
 
 const MONTH = 1;
 const YEAR = 12;
+
+/*
+ * Amtliche Quellen. Alle URLs vor Aufnahme auf Erreichbarkeit geprüft; das RKI
+ * ändert seine Adressen gelegentlich — bei der jährlichen Pflege mitprüfen.
+ */
+const SOURCES = {
+  kalender: {
+    label: "RKI — STIKO-Impfkalender",
+    url: "https://www.rki.de/DE/Themen/Infektionskrankheiten/Impfen/Impfkalender/impfkalender-node.html",
+  },
+  stiko: {
+    label: "RKI — Empfehlungen der STIKO",
+    url: "https://www.rki.de/DE/Themen/Infektionskrankheiten/Impfen/Staendige-Impfkommission/Empfehlungen-der-STIKO/empfehlungen-der-stiko-node.html",
+  },
+  reise: {
+    label: "RKI — Reiseimpfempfehlungen (STIKO/DTG)",
+    url: "https://www.rki.de/DE/Themen/Infektionskrankheiten/Impfen/Staendige-Impfkommission/Reiseimpfungen/reiseimpfungen-node.html",
+  },
+  meningokokken: {
+    label: "RKI — Meningokokken-Impfempfehlung (Stand 30.10.2025)",
+    url: "https://www.rki.de/SharedDocs/FAQs/DE/Impfen/Meningokokken/FAQ_MenACWY_Impfempfehlung.html",
+  },
+  meningokokken_b: {
+    label: "RKI — Meningokokken-B-Impfempfehlung (Stand 30.10.2025)",
+    url: "https://www.rki.de/SharedDocs/FAQs/DE/Impfen/Meningokokken/FAQ_MenB_Impfempfehlung.html",
+  },
+  covid: {
+    label: "RKI — COVID-19-Impfung (Stand 09.07.2026)",
+    url: "https://www.rki.de/DE/Themen/Infektionskrankheiten/Impfen/Impfungen-A-Z/COVID-19/covid-19-node.html",
+  },
+  rsv: {
+    label: "RKI — RSV-Prophylaxe",
+    url: "https://www.rki.de/DE/Themen/Infektionskrankheiten/Impfen/Impfungen-A-Z/RSV/rsv-node.html",
+  },
+};
 
 const GROUPS = {
   basis: { label: "Grundimmunisierung (ab Säuglingsalter)", color: "#a62d20" },
@@ -42,11 +92,41 @@ const INFANT_SERIES = [
 const STIKO_SCHEDULE = [
   /* ---------------------------- Grundimmunisierung (ab Säuglingsalter) --- */
   {
+    id: "rsv_saeugling",
+    name: "RSV-Schutz (Säugling)",
+    fullName: "RSV-Prophylaxe mit Antikörpern (Nirsevimab)",
+    group: "basis",
+    info:
+      "Kein Impfstoff, sondern eine einmalige Gabe fertiger Antikörper " +
+      "(Nirsevimab). Sie schützt Neugeborene und Säuglinge in ihrer ersten " +
+      "RSV-Saison — RS-Viren sind der häufigste Grund für " +
+      "Krankenhausaufenthalte im ersten Lebensjahr.",
+    ageInfo:
+      "Einmalig für alle Neugeborenen und Säuglinge in der ersten RSV-Saison " +
+      "(Herbst/Winter). Im Sommer geborene Kinder erhalten sie im Herbst, " +
+      "während der Saison Geborene möglichst gleich nach der Geburt. " +
+      "Versäumtes bis zum 1. Geburtstag nachholen.",
+    noBooster:
+      "Der Schutz ist nur für die erste RSV-Saison vorgesehen; danach ist keine " +
+      "weitere Gabe empfohlen.",
+    source: "rsv",
+    series: [
+      { label: "1 Gabe", ageMonths: 0, note: "1. RSV-Saison, meist Okt.–März" },
+    ],
+  },
+  {
     id: "rotaviren",
     name: "Rotaviren",
     fullName: "Rotavirus-Gastroenteritis (Schluckimpfung)",
     group: "basis",
     info: "Erste Dosis ab einem Alter von 6 Wochen, Impfserie früh abschließen.",
+    ageInfo:
+      "Beginn ab 6 Wochen, möglichst bis zum Alter von 12 Wochen. Je nach " +
+      "Impfstoff 2 oder 3 Schluckdosen im Abstand von mindestens 4 Wochen. " +
+      "Die Serie muss spätestens mit 24 bzw. 32 Wochen abgeschlossen sein — " +
+      "danach darf nicht mehr geimpft werden, weil das Risiko einer " +
+      "Darmeinstülpung mit dem Alter steigt.",
+    source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 1.5 * MONTH, note: "ab 6 Wochen" },
       { label: "2. Dosis", ageMonths: 3 * MONTH },
@@ -59,6 +139,9 @@ const STIKO_SCHEDULE = [
     fullName: "Wundstarrkrampf (Tetanus)",
     group: "basis",
     info: "Grundimmunisierung als Säugling, Auffrischungen im Kindes-/Jugendalter, danach alle 10 Jahre.",
+    ageInfo:
+      "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Auffrischungen mit 5–6 und 9–16 Jahren, danach lebenslang alle 10 Jahre.",
+    source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 2 * MONTH },
       { label: "2. Dosis", ageMonths: 4 * MONTH },
@@ -79,6 +162,9 @@ const STIKO_SCHEDULE = [
     fullName: "Diphtherie",
     group: "basis",
     info: "Grundimmunisierung als Säugling, Auffrischungen im Kindes-/Jugendalter, danach alle 10 Jahre.",
+    ageInfo:
+      "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Auffrischungen mit 5–6 und 9–16 Jahren, danach lebenslang alle 10 Jahre — meist zusammen mit Tetanus.",
+    source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 2 * MONTH },
       { label: "2. Dosis", ageMonths: 4 * MONTH },
@@ -99,6 +185,9 @@ const STIKO_SCHEDULE = [
     fullName: "Keuchhusten (Pertussis)",
     group: "basis",
     info: "Grundimmunisierung als Säugling, Auffrischungen im Kindes-/Jugendalter; im Erwachsenenalter einmalig mit der nächsten Td-Auffrischung (als Tdap).",
+    ageInfo:
+      "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Auffrischungen mit 5–6 und 9–16 Jahren. Erwachsene erhalten EINMALIG eine Auffrischung zusammen mit der nächsten Tetanus-Impfung. Schwangere sollen in JEDER Schwangerschaft im letzten Drittel geimpft werden — das schützt das Neugeborene.",
+    source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 2 * MONTH },
       { label: "2. Dosis", ageMonths: 4 * MONTH },
@@ -113,6 +202,14 @@ const STIKO_SCHEDULE = [
     fullName: "Kinderlähmung (Poliomyelitis)",
     group: "basis",
     info: "Grundimmunisierung als Säugling, Auffrischung im Jugendalter. Im Erwachsenenalter nur bei Reisen in Endemiegebiete auffrischen.",
+    ageInfo:
+      "Grundimmunisierung als Säugling (2, 4, 11 Monate), eine Auffrischung " +
+      "im Alter von 9–16 Jahren. Fehlendes ist lebenslang nachholbar.",
+    noBooster:
+      "Nach der einmaligen Auffrischung im Jugendalter sind in Deutschland " +
+      "keine weiteren Auffrischungen nötig. Die 10-Jahres-Regel gilt nur für " +
+      "Reisen in Länder mit Polio-Risiko und für bestimmte Berufe.",
+    source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 2 * MONTH },
       { label: "2. Dosis", ageMonths: 4 * MONTH },
@@ -126,6 +223,9 @@ const STIKO_SCHEDULE = [
     fullName: "Haemophilus influenzae Typ b",
     group: "basis",
     info: "Nur im Säuglingsalter nötig (Teil der 6-fach-Impfung).",
+    ageInfo:
+      "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Ab 5 Jahren ist die Impfung bei gesunden Kindern nicht mehr nötig.",
+    source: "kalender",
     series: INFANT_SERIES.map((d) => ({ ...d })),
   },
   {
@@ -134,6 +234,9 @@ const STIKO_SCHEDULE = [
     fullName: "Hepatitis B",
     group: "basis",
     info: "Bei Kindern in der 6-fach-Impfung enthalten; für Erwachsene mit erhöhtem Risiko nachholbar.",
+    ageInfo:
+      "Als Säugling mit 2, 4 und 11 Monaten (Sechsfach-Impfung). Frühgeborene erhalten eine zusätzliche Dosis mit 3 Monaten, also vier insgesamt. Versäumtes wird bis zum 18. Geburtstag nachgeholt. Für Erwachsene ist es dann keine Standard-, sondern eine Indikationsimpfung (z. B. bei bestimmten Berufen).",
+    source: "kalender",
     series: INFANT_SERIES.map((d) => ({ ...d })),
   },
   {
@@ -142,6 +245,9 @@ const STIKO_SCHEDULE = [
     fullName: "Pneumokokken-Konjugatimpfstoff (PCV)",
     group: "basis",
     info: "Grundimmunisierung im Säuglingsalter (2+1-Schema).",
+    ageInfo:
+      "Mit 2, 4 und 11 Monaten (Frühgeborene zusätzlich mit 3 Monaten). Ab 24 Monaten ist die Impfung nicht mehr als Standardimpfung empfohlen und wird auch nicht nachgeholt.",
+    source: "kalender",
     series: INFANT_SERIES.map((d) => ({ ...d })),
   },
   {
@@ -150,6 +256,9 @@ const STIKO_SCHEDULE = [
     fullName: "Meningokokken der Serogruppe B",
     group: "basis",
     info: "Seit 2024 als Standardimpfung empfohlen.",
+    ageInfo:
+      "Mit 2, 4 und 12 Monaten. Versäumtes soll spätestens bis zum 5. Geburtstag nachgeholt werden; danach besteht keine Standardempfehlung mehr.",
+    source: "meningokokken_b",
     series: [
       { label: "1. Dosis", ageMonths: 2 * MONTH },
       { label: "2. Dosis", ageMonths: 4 * MONTH },
@@ -163,7 +272,20 @@ const STIKO_SCHEDULE = [
     name: "Meningokokken C",
     fullName: "Meningokokken der Serogruppe C",
     group: "kind",
-    info: "Einmalige Impfung ab dem 12. Lebensmonat.",
+    retired: true,
+    info:
+      "Diese Impfung wird seit Oktober 2025 nicht mehr als Standardimpfung " +
+      "empfohlen. Erkrankungen durch die Serogruppe C sind in Deutschland sehr " +
+      "selten geworden. An ihre Stelle ist die Impfung gegen Meningokokken " +
+      "ACWY mit 12–14 Jahren getreten.",
+    ageInfo:
+      "Früher: einmalig im 2. Lebensjahr. Heute keine Standardimpfung mehr — " +
+      "bereits erhaltene Impfungen bleiben hier dokumentiert.",
+    noBooster:
+      "Die App zeigt hierzu keine Fälligkeit mehr an, weil die STIKO diese " +
+      "Impfung nicht mehr empfiehlt. Wer sie als Kind erhalten hat, braucht " +
+      "nichts weiter zu tun.",
+    source: "meningokokken",
     series: [{ label: "1 Dosis", ageMonths: 12 * MONTH }],
   },
   {
@@ -172,6 +294,9 @@ const STIKO_SCHEDULE = [
     fullName: "Masern, Mumps, Röteln (MMR)",
     group: "kind",
     info: "Zwei Dosen; für nach 1970 Geborene ohne ausreichenden Schutz empfohlen.",
+    ageInfo:
+      "Zwei Dosen mit 11 und 15 Monaten (Mindestabstand 4 Wochen). Es gibt KEINE obere Altersgrenze: Fehlendes kann in jedem Alter nachgeholt werden. Alle nach 1970 Geborenen ab 18 Jahren mit unklarem Impfstatus sollen einmalig eine MMR-Impfung erhalten.",
+    source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 11 * MONTH },
       { label: "2. Dosis", ageMonths: 15 * MONTH, note: "Mindestabstand 4 Wochen" },
@@ -183,6 +308,9 @@ const STIKO_SCHEDULE = [
     fullName: "Windpocken (Varizellen)",
     group: "kind",
     info: "Zwei Dosen, meist parallel zur MMR-Impfung.",
+    ageInfo:
+      "Zwei Dosen mit 11 und 15 Monaten. Bei Kindern und Jugendlichen ohne Windpocken-Erkrankung jederzeit nachholbar.",
+    source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 11 * MONTH },
       { label: "2. Dosis", ageMonths: 15 * MONTH },
@@ -196,6 +324,12 @@ const STIKO_SCHEDULE = [
     fullName: "Humane Papillomviren",
     group: "jugend",
     info: "Für alle Jugendlichen; 2 Dosen bei Beginn im Alter von 9–14 Jahren.",
+    ageInfo:
+      "Für alle Kinder und Jugendlichen von 9 bis 14 Jahren — Mädchen wie " +
+      "Jungen. In diesem Alter genügen 2 Dosen im Abstand von mindestens 5 " +
+      "Monaten. Wer erst mit 15 Jahren oder später beginnt, braucht 3 Dosen. " +
+      "Versäumtes bis zum 18. Geburtstag nachholen.",
+    source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 9 * YEAR, note: "ab 9 Jahren" },
       { label: "2. Dosis", ageMonths: 9 * YEAR + 6 * MONTH, note: "Abstand 5 Monate" },
@@ -209,6 +343,9 @@ const STIKO_SCHEDULE = [
     fullName: "Saisonale Influenza",
     group: "senior",
     info: "Jährlich für Personen ab 60 Jahren (Impfung im Herbst).",
+    ageInfo:
+      "Jährlich ab 60 Jahren, am besten im Herbst. Für Schwangere, chronisch Kranke und medizinisches Personal gilt sie unabhängig vom Alter. Ab 60 wird ein Hochdosis-Impfstoff verwendet.",
+    source: "kalender",
     annual: { fromAgeMonths: 60 * YEAR, seasonNote: "am besten Okt.–Dez." },
     adultOnly: true,
   },
@@ -218,6 +355,14 @@ const STIKO_SCHEDULE = [
     fullName: "Pneumokokken-Impfung im Alter",
     group: "senior",
     info: "Einmalige Impfung für Personen ab 60 Jahren.",
+    ageInfo:
+      "Einmalig ab 60 Jahren mit dem 20-fach-Konjugatimpfstoff (PCV20).",
+    noBooster:
+      "Zur Notwendigkeit einer Wiederholung liegen für PCV20 noch keine Daten " +
+      "vor, deshalb spricht die STIKO dazu keine Empfehlung aus — und die App " +
+      "erinnert nicht daran. Wer früher den älteren Impfstoff PPSV23 erhalten " +
+      "hat, soll frühestens 6 Jahre danach PCV20 bekommen.",
+    source: "kalender",
     series: [{ label: "1 Dosis", ageMonths: 60 * YEAR }],
     adultOnly: true,
   },
@@ -227,6 +372,9 @@ const STIKO_SCHEDULE = [
     fullName: "Herpes zoster — Totimpfstoff",
     group: "senior",
     info: "Zwei Dosen für Personen ab 60 Jahren (Abstand 2–6 Monate).",
+    ageInfo:
+      "Zwei Dosen ab 60 Jahren im Abstand von 2–6 Monaten. Bei Immunschwäche oder schweren chronischen Erkrankungen schon ab 18 Jahren.",
+    source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 60 * YEAR },
       { label: "2. Dosis", ageMonths: 60 * YEAR + 2 * MONTH, note: "Abstand 2–6 Monate" },
@@ -238,8 +386,39 @@ const STIKO_SCHEDULE = [
     name: "COVID-19",
     fullName: "COVID-19-Auffrischimpfung",
     group: "senior",
-    info: "Jährliche Auffrischung für Personen ab 60 Jahren und Risikogruppen.",
-    annual: { fromAgeMonths: 60 * YEAR, seasonNote: "meist im Herbst" },
+    info:
+      "Seit Juli 2026 als Standardimpfung jährlich ab 75 Jahren empfohlen. " +
+      "Die frühere Empfehlung, zunächst eine Basisimmunität aufzubauen, ist " +
+      "entfallen.",
+    ageInfo:
+      "Jährlich ab 75 Jahren. Für Menschen mit Vorerkrankungen oder erhöhtem " +
+      "Risiko gilt die Empfehlung unabhängig vom Alter — bitte ärztlich klären.",
+    source: "covid",
+    annual: {
+      fromAgeMonths: 75 * YEAR,
+      seasonNote: "Spätsommer/Frühherbst, zum Saisonbeginn",
+    },
+    adultOnly: true,
+  },
+  {
+    id: "rsv_senior",
+    name: "RSV (ab 75)",
+    fullName: "Respiratorische Synzytial-Viren (RSV)",
+    group: "senior",
+    info:
+      "Einmalige Impfung gegen RS-Viren für alle ab 75 Jahren. RSV verläuft im " +
+      "höheren Alter häufig schwer.",
+    ageInfo:
+      "Einmalig ab 75 Jahren, möglichst im Spätsommer oder Herbst vor der " +
+      "RSV-Saison. Zwischen 60 und 74 Jahren bei schweren Vorerkrankungen oder " +
+      "in Pflegeeinrichtungen — dann ärztlich klären.",
+    noBooster:
+      "Ob eine Wiederholung nötig ist, lässt sich nach heutiger Datenlage noch " +
+      "nicht sagen. Die App erinnert deshalb bewusst nicht an eine Auffrischung.",
+    source: "rsv",
+    series: [
+      { label: "1 Dosis", ageMonths: 75 * YEAR, note: "Spätsommer/Herbst" },
+    ],
     adultOnly: true,
   },
 
@@ -250,6 +429,15 @@ const STIKO_SCHEDULE = [
     fullName: "Frühsommer-Meningoenzephalitis",
     group: "indikation",
     info: "Bei Aufenthalt in Risikogebieten; nach Grundimmunisierung Auffrischung alle 3–5 Jahre.",
+    ageInfo:
+      "Ab 12 Monaten, empfohlen bei Aufenthalt in Risikogebieten. Drei Dosen: " +
+      "die zweite nach 1–3 Monaten, die dritte je nach Impfstoff 5–12 Monate " +
+      "später.",
+    noBooster:
+      "Erste Auffrischung 3 Jahre nach Abschluss der Grundimmunisierung — so " +
+      "ist es hier hinterlegt. Danach genügen meist 5 Jahre. Ab 50 bzw. 60 " +
+      "Jahren (je nach Impfstoff) wird wieder alle 3 Jahre aufgefrischt.",
+    source: "reise",
     series: [
       { label: "1. Dosis", ageMonths: 12 * MONTH },
       { label: "2. Dosis", ageMonths: 13 * MONTH, note: "Abstand 1–3 Monate" },
@@ -264,6 +452,15 @@ const STIKO_SCHEDULE = [
     fullName: "Hepatitis A (Reise-/Indikationsimpfung)",
     group: "indikation",
     info: "Vor Reisen in Regionen mit erhöhtem Risiko; zweite Dosis für langjährigen Schutz.",
+    ageInfo:
+      "Ab 12 Monaten. Zwei Dosen im Abstand von 6–12 Monaten geben " +
+      "langjährigen Schutz.",
+    noBooster:
+      "Die App zeigt keine Auffrischung an. Nach vollständiger " +
+      "Grundimmunisierung besteht bei fast allen Geimpften mindestens 10–20 " +
+      "Jahre Schutz; ob überhaupt eine Auffrischung nötig ist, ist offiziell " +
+      "noch ungeklärt. Eine feste Jahreszahl wäre deshalb nur geraten.",
+    source: "reise",
     series: [
       { label: "1. Dosis", ageMonths: 12 * MONTH },
       { label: "2. Dosis", ageMonths: 18 * MONTH, note: "Abstand 6–12 Monate" },
@@ -279,6 +476,19 @@ const STIKO_SCHEDULE = [
     fullName: "Gelbfieber (Yellow Fever)",
     group: "speziell",
     info: "Für viele Länder Pflicht (Nachweis im gelben Ausweis). Meist lebenslanger Schutz nach einer Impfung; nur in zugelassenen Gelbfieber-Impfstellen.",
+
+    ageInfo:
+      "Ab 9 Monaten. Eine Dosis genügt. Unter 6 Monaten darf nicht geimpft " +
+      "werden, zwischen 6 und 8 Monaten nur ausnahmsweise.",
+    noBooster:
+      "Das internationale Impfzertifikat ist seit der WHO-Regelung " +
+      "LEBENSLANG gültig — auch bereits ausgestellte Zertifikate. Die App " +
+      "zeigt deshalb kein Ablaufdatum an. Medizinisch empfiehlt die STIKO " +
+      "lediglich EINE einmalige Auffrischung nach 10 oder mehr Jahren, und " +
+      "nur bei erneuter Reise in ein Risikogebiet; danach nie wieder. " +
+      "Sonderfall: Wer die erste Impfung vor dem 2. Geburtstag erhalten hat, " +
+      "sollte sie schon nach 5 Jahren auffrischen.",
+    source: "reise",
     series: [{ label: "1 Dosis", ageMonths: 9 * MONTH, note: "ab 9 Monaten" }],
     onDemand: true,
     riskNote: "Reise-/Pflichtimpfung für Endemiegebiete (Afrika, Südamerika).",
@@ -289,6 +499,14 @@ const STIKO_SCHEDULE = [
     fullName: "Japanische Enzephalitis (JE)",
     group: "speziell",
     info: "Für Reisen in Endemiegebiete Asiens; Auffrischung vor erneuter Exposition.",
+    ageInfo:
+      "Ab 2 Monaten. Zwei Dosen im Abstand von 28 Tagen; für Erwachsene von " +
+      "18 bis 65 Jahren ist auch ein Schnellschema (Tag 0 und 7) möglich.",
+    noBooster:
+      "Erste Auffrischung 12–24 Monate nach der Grundimmunisierung — dieser " +
+      "Wert ist hinterlegt. Eine zweite Auffrischung ist erst 10 Jahre später " +
+      "vorgesehen.",
+    source: "reise",
     series: [
       { label: "1. Dosis", ageMonths: 12 * MONTH },
       { label: "2. Dosis", ageMonths: 12 * MONTH + 1 * MONTH, note: "Abstand 28 Tage" },
@@ -302,6 +520,20 @@ const STIKO_SCHEDULE = [
     fullName: "Tollwut (Rabies) — präexpositionell",
     group: "speziell",
     info: "Vorsorgliche Impfung bei Reisen/Tätigkeiten mit Expositionsrisiko (3 Dosen).",
+    ageInfo:
+      "Keine Altersgrenze — ab Geburt möglich. Grundimmunisierung mit 3 Dosen " +
+      "an Tag 0, 7 und 21 (oder 28). Bei gesunder Immunabwehr ist auch ein " +
+      "Kurzschema mit 2 Dosen (Tag 0 und 7) möglich; bei fortbestehendem " +
+      "Risiko folgt dann spätestens nach einem Jahr eine dritte Dosis.",
+    noBooster:
+      "Die App erinnert bewusst nicht an eine Auffrischung. Grund: Nach drei " +
+      "Dosen hält die Fähigkeit des Körpers, schnell zu reagieren, laut STIKO " +
+      "„Jahrzehnte, ggf. lebenslang" + "“" + " an; routinemäßige " +
+      "Blutkontrollen sind für Reisende nicht empfohlen. Die " +
+      "Herstellerangaben nennen zwar 2–5 Jahre, das würde aber zu unnötigen " +
+      "Impfungen führen. Wichtig: Nach einem Biss oder Kratzer ist IMMER " +
+      "sofort ärztliche Hilfe nötig — auch wenn du geimpft bist.",
+    source: "reise",
     series: [
       { label: "1. Dosis", ageMonths: 12 * MONTH },
       { label: "2. Dosis", ageMonths: 12 * MONTH + 0.25 * MONTH, note: "Tag 7" },
@@ -316,6 +548,15 @@ const STIKO_SCHEDULE = [
     fullName: "Typhus abdominalis",
     group: "speziell",
     info: "Reiseimpfung bei erhöhtem Risiko; Schutz ca. 3 Jahre, dann Auffrischung.",
+    ageInfo:
+      "Spritze (Typhim Vi) ab 2 Jahren, Schluckimpfung (Typhoral L) ab 5 " +
+      "Jahren. Die Schluckimpfung besteht aus 3 Kapseln an Tag 1, 3 und 5.",
+    noBooster:
+      "Je nach Impfstoff sehr unterschiedlich: Die Spritze schützt etwa 3 " +
+      "Jahre — dieser Wert ist hier hinterlegt. Bei der Schluckimpfung " +
+      "empfiehlt die STIKO dagegen eine JÄHRLICHE Auffrischung. Wenn du die " +
+      "Kapseln bekommen hast, verlass dich also nicht auf die 3 Jahre.",
+    source: "reise",
     series: [{ label: "1 Dosis", ageMonths: 12 * MONTH }],
     onDemand: true,
     riskNote: "Reiseimpfung für Regionen mit mangelnder Hygiene.",
@@ -324,11 +565,25 @@ const STIKO_SCHEDULE = [
     id: "meningokokken_acwy",
     name: "Meningokokken ACWY",
     fullName: "Meningokokken der Serogruppen A, C, W, Y",
-    group: "speziell",
-    info: "Für Reisen (z. B. Pilgerreisen/Hadsch), Ausbrüche und bestimmte Tätigkeiten.",
-    series: [{ label: "1 Dosis", ageMonths: 12 * MONTH }],
-    onDemand: true,
-    riskNote: "Reise-/Indikationsimpfung.",
+    group: "jugend",
+    info:
+      "Seit 2026 Standardimpfung für alle Jugendlichen: eine Dosis eines " +
+      "Vierfach-Konjugatimpfstoffs im Alter von 12–14 Jahren. Sie ersetzt die " +
+      "frühere Meningokokken-C-Impfung im Kleinkindalter.",
+    ageInfo:
+      "Einmalig mit 12–14 Jahren, unabhängig vom bisherigen Impfstatus. " +
+      "Versäumte Impfungen bis zum 25. Geburtstag nachholen.",
+    noBooster:
+      "Die STIKO empfiehlt derzeit keine Auffrischung — eine Dosis genügt. " +
+      "Für Reisen in Risikogebiete (z. B. Pilgerreise nach Mekka) kann ärztlich " +
+      "eine erneute Impfung angeraten werden.",
+    source: "meningokokken",
+    series: [
+      { label: "1 Dosis", ageMonths: 12 * YEAR, note: "12–14 Jahre" },
+    ],
+    riskNote:
+      "Zusätzlich als Reise-/Indikationsimpfung (z. B. Pilgerreisen, Ausbrüche, " +
+      "bestimmte Tätigkeiten) — dann ärztlich beraten lassen.",
   },
   {
     id: "cholera",
@@ -336,6 +591,16 @@ const STIKO_SCHEDULE = [
     fullName: "Cholera (Schluckimpfung)",
     group: "speziell",
     info: "Reiseimpfung bei erhöhtem Risiko (2 Dosen).",
+    ageInfo:
+      "Schluckimpfung ab 2 Jahren. Erwachsene und Kinder ab 6 Jahren: 2 Dosen " +
+      "im Abstand von 1–6 Wochen. Kinder von 2 bis unter 6 Jahren brauchen 3 " +
+      "Dosen.",
+    noBooster:
+      "Der hinterlegte Wert von 2 Jahren gilt für Erwachsene. Kinder unter 6 " +
+      "Jahren brauchen schon nach 6 Monaten eine Auffrischung. Wichtig: Ist " +
+      "der Schutz abgelaufen, wird nicht einfach eine Dosis nachgeholt — die " +
+      "Grundimmunisierung muss komplett wiederholt werden.",
+    source: "reise",
     series: [
       { label: "1. Dosis", ageMonths: 12 * MONTH },
       { label: "2. Dosis", ageMonths: 12 * MONTH + 0.5 * MONTH, note: "Abstand 1–6 Wochen" },
@@ -408,13 +673,25 @@ const COMBINATIONS = [
   },
 ];
 
-// Altersbegrenzte Impfungen (nur im Säuglings-/Kleinkindalter): id → max. Alter
-// in Jahren, ab dem ein Nachholen nicht mehr sinnvoll/möglich ist.
-const INFANT_ONLY = {
-  rotaviren: 1,
-  hib: 5,
+/*
+ * Obere Altersgrenzen: id → Alter in Jahren, ab dem die STIKO die Impfung
+ * nicht mehr empfiehlt bzw. ein Nachholen nicht mehr vorsieht. Oberhalb der
+ * Grenze wird die Impfung automatisch eingeklappt und erzeugt keine
+ * Fälligkeit mehr (bereits dokumentierte Impfungen bleiben sichtbar).
+ */
+const MAX_AGE_YEARS = {
+  // 32 Wochen ≈ 0,62 Jahre — spätester Abschluss der Rotavirus-Serie
+  rotaviren: 32 / 52,
   pneumokokken_kind: 2,
+  meningokokken_b: 5, // Nachholen bis zum 5. Geburtstag
+  hib: 5,
+  rsv_saeugling: 1, // nur 1. RSV-Saison, Nachholen bis zum 1. Geburtstag
+  hepatitis_b: 18, // Standardimpfung/Nachholen bis unter 18 Jahre
+  hpv: 18, // Nachholen bis unter 18 Jahre
+  meningokokken_acwy: 25, // Nachholen bis unter 25 Jahre
 };
+// Alter Name, weiterhin exportiert, damit nichts bricht.
+const INFANT_ONLY = MAX_AGE_YEARS;
 
 // Nachhol-Hinweise fürs Info-Fenster.
 const CATCHUP_NOTES = {
@@ -435,9 +712,15 @@ const CATCHUP_NOTES = {
   hepatitis_b:
     "Bei fehlender Grundimmunisierung und erhöhtem Risiko nachholbar.",
   meningokokken_b:
-    "Vor allem für Säuglinge/Kleinkinder und Risikogruppen; Nachholen bis ca. 5 Jahre.",
+    "Nachholen bis zum 5. Geburtstag; danach besteht keine Standardempfehlung mehr.",
   meningokokken_c:
-    "Einmalige Impfung; Nachholen bis zum 18. Geburtstag empfohlen.",
+    "Wird nicht mehr nachgeholt — die Empfehlung ist seit Oktober 2025 entfallen. An ihre Stelle tritt Meningokokken ACWY mit 12–14 Jahren.",
+  meningokokken_acwy:
+    "Versäumte Impfungen bis zum 25. Geburtstag nachholen.",
+  rsv_saeugling:
+    "Nur für die erste RSV-Saison vorgesehen; spätestens bis zum 1. Geburtstag nachholen.",
+  hpv:
+    "Nachholen bis zum 18. Geburtstag; bei Impfbeginn ab 15 Jahren sind 3 Dosen nötig.",
   mmr:
     "Für nach 1970 Geborene mit fehlendem oder unklarem Schutz: eine Impfung dringend nachholen (Masernschutz).",
   varizellen:
@@ -448,17 +731,23 @@ const CATCHUP_NOTES = {
 
 // Ungefähre Schutzdauer in Jahren (für die „Gültigkeit überwachen"-Funktion).
 // Nur Impfungen mit sinnvoll überwachbarer, endlicher Schutzdauer.
+/*
+ * Schutzdauer in Jahren für die Gültigkeits-Überwachung.
+ *
+ * Bewusst NICHT enthalten (Begründung steht je Impfung unter `noBooster` und
+ * erscheint im Info-Fenster):
+ *   gelbfieber          Impfzertifikat lebenslang gültig (WHO)
+ *   meningokokken_acwy  STIKO empfiehlt keine Auffrischung
+ *   pneumokokken_senior für PCV20 keine Wiederholungsempfehlung
+ *   tollwut             Boosterfähigkeit hält laut STIKO Jahrzehnte an
+ *   hepatitis_a         Auffrischbedarf offiziell „unklar" (mind. 10–20 Jahre)
+ */
 const VALID_YEARS = {
-  typhus: 3,
-  gelbfieber: 10,
-  japanische_enzephalitis: 3,
-  tollwut: 2,
-  meningokokken_acwy: 5,
-  cholera: 2,
-  fsme: 4,
-  hepatitis_a: 20,
-  poliomyelitis: 10,
-  pneumokokken_senior: 6,
+  typhus: 3, // Typhim Vi (Spritze); Schluckimpfung jährlich — siehe Info
+  japanische_enzephalitis: 2, // 1. Auffrischung 12–24 Mon., danach 10 Jahre
+  cholera: 2, // Dukoral ab 6 Jahren; Kinder 2–6 J.: 6 Monate
+  fsme: 3, // 1. Auffrischung nach 3 Jahren, danach 5 Jahre (ab 50/60 J.: 3)
+  poliomyelitis: 10, // nur reisebezogen für Risikoländer
 };
 
 // Liefert die Kurzbezeichnung einer Impfung anhand ihrer ID.
@@ -473,8 +762,10 @@ window.STIKO = {
   STIKO_SCHEDULE,
   COMBINATIONS,
   INFANT_ONLY,
+  MAX_AGE_YEARS,
   CATCHUP_NOTES,
   VALID_YEARS,
+  SOURCES,
   vaccineNameById,
   MONTH,
   YEAR,
