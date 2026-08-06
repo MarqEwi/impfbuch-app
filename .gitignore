@@ -8,6 +8,12 @@ www/
 # Persönliche lokale Ordner (nicht Teil der App)
 Screenshot/
 
+# Unbearbeitete Geräte-Aufnahmen: darauf stehen echter Name, Geburtsdatum und
+# Impfstatus. Das Verzeichnis ist öffentlich — diese Bilder gehören nicht
+# hinein. Die anonymisierten Fassungen für den Store bleiben versioniert.
+store/Screenshot_*.jpg
+store/Screenshot_*.png
+
 # Betriebssystem-Reste
 Thumbs.db
 Desktop.ini
