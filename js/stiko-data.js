@@ -623,13 +623,18 @@ const STIKO_SCHEDULE = [
       "Ab 2 Monaten. Zwei Dosen im Abstand von 28 Tagen; für Erwachsene von " +
       "18 bis 65 Jahren ist auch ein Schnellschema (Tag 0 und 7) möglich.",
     noBooster:
-      "Erste Auffrischung 12–24 Monate nach der Grundimmunisierung — dieser " +
-      "Wert ist hinterlegt. Eine zweite Auffrischung ist erst 10 Jahre später " +
-      "vorgesehen.",
+      "Nach den beiden Grunddosen folgt eine Auffrischung nach 12–24 Monaten " +
+      "(als 3. Impfung hinterlegt). Die zweite und letzte Auffrischung ist " +
+      "erst 10 Jahre danach vorgesehen — weitere sind nicht empfohlen.",
     source: "reise",
     series: [
       { label: "1. Dosis", ageMonths: 12 * MONTH },
       { label: "2. Dosis", ageMonths: 12 * MONTH + 1 * MONTH, note: "Abstand 28 Tage" },
+      {
+        label: "1. Auffrischung",
+        ageMonths: 12 * MONTH + 18 * MONTH,
+        note: "12–24 Monate nach der 2. Dosis",
+      },
     ],
     onDemand: true,
     riskNote: "Reiseimpfung für Asien/Pazifik.",
@@ -1011,7 +1016,9 @@ const CATCHUP_NOTES = {
  */
 const VALID_YEARS = {
   typhus: 3, // Typhim Vi (Spritze); Schluckimpfung jährlich — siehe Info
-  japanische_enzephalitis: 2, // 1. Auffrischung 12–24 Mon., danach 10 Jahre
+  // Nach der 1. Auffrischung (3. Dosis, siehe series) folgt die zweite erst
+  // 10 Jahre später. Weitere Auffrischungen sind nicht vorgesehen.
+  japanische_enzephalitis: 10,
   cholera: 2, // Dukoral ab 6 Jahren; Kinder 2–6 J.: 6 Monate
   fsme: 3, // 1. Auffrischung nach 3 Jahren, danach 5 Jahre (ab 50/60 J.: 3)
   poliomyelitis: 10, // nur reisebezogen für Risikoländer

@@ -646,7 +646,7 @@
     const s = profile.vstate && profile.vstate[vac.id];
     // Ausdrückliche Nutzer-Auswahl hat immer Vorrang (auch bei Reise/Überwachung).
     if (s === "hidden") return "hidden";
-    if (s === "collapsed") return "collapsed";
+    if (s === "collapsed" || s === "age-hidden") return "collapsed";
     if (s === "shown") return "shown";
     // Reise-Empfehlung oder Überwachung blenden die Impfung ein.
     if (isMonitored(vac.id, profile) || travelVaccineSet(profile).has(vac.id))
@@ -659,6 +659,8 @@
   // Vollständiger Hinweis, warum eine Impfung eingeklappt/ausgeblendet ist.
   function hiddenReason(vac, profile) {
     const s = profile.vstate && profile.vstate[vac.id];
+    if (s === "age-hidden")
+      return "Ausgeblendet, da in deinem Alter nicht mehr empfohlen oder nachholbar";
     if (s === "collapsed" || s === "hidden") return "Von dir ausgeblendet";
     const done = recordsFor(profile, vac.id).length;
     if (isAgeNotRecommended(vac, profile, done)) {
@@ -1314,9 +1316,10 @@
     const monitorBtn = canMonitor
       ? `<button class="btn-hide btn-monitor${
           monitored ? " active" : ""
-        }" data-vaccine="${vac.id}" title="Gültigkeit dieser Impfung überwachen">${
-          monitored ? "✓ Überwachung aktiv" : "Gültigkeit überwachen"
-        }</button>`
+        }" data-vaccine="${vac.id}" title="Gültigkeit dieser Impfung überwachen">${svgIcon(
+          monitored ? "check" : "bell",
+          "ic-btn"
+        )}${monitored ? "Überwachung aktiv" : "Gültigkeit überwachen"}</button>`
       : "";
 
     row.innerHTML = `
@@ -1338,7 +1341,14 @@
         ${nextHtml}
         <div class="foot-actions">
           ${monitorBtn}
-          <button class="btn-hide btn-collapse" data-vaccine="${vac.id}" title="Diese Impfung ausblenden">Ausblenden</button>
+          <button class="btn-hide btn-collapse" data-vaccine="${vac.id}" title="Diese Impfung ausblenden">${svgIcon(
+      "x",
+      "ic-btn"
+    )}Ausblenden</button>
+          <button class="btn-hide btn-agehide" data-vaccine="${vac.id}" title="Ausblenden, weil sie in deinem Alter nicht mehr empfohlen ist">${svgIcon(
+      "calendar",
+      "ic-btn"
+    )}Wegen Alter ausblenden</button>
           <button class="btn-small add-record" data-vaccine="${vac.id}">+ Impfung eintragen</button>
         </div>
       </div>`;
@@ -1348,6 +1358,9 @@
     );
     row.querySelector(".btn-collapse").addEventListener("click", () =>
       setVState(vac.id, "collapsed")
+    );
+    row.querySelector(".btn-agehide").addEventListener("click", () =>
+      setVState(vac.id, "age-hidden")
     );
     const monBtn = row.querySelector(".btn-monitor");
     if (monBtn)

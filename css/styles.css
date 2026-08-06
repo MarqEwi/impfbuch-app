@@ -1852,6 +1852,18 @@ dialog#quick-dialog::backdrop {
   padding: 6px 10px 10px;
 }
 
+/* Symbole in den kleinen Zeilen-Schaltflächen */
+.btn-hide .ic-btn {
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 5px;
+  vertical-align: -0.15em;
+}
+.btn-hide {
+  display: inline-flex;
+  align-items: center;
+}
+
 /* Fällig-Einträge: antippbar → springt im Impfpass zur Impfung */
 .rem-clickable {
   cursor: pointer;
