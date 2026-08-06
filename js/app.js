@@ -1080,22 +1080,28 @@
   }
 
   /* Zählt, was bei einer Person gerade ansteht — dieselbe Rechnung wie im
-     Tab „Fällig", damit die Zahl am Buch und das Tab-Abzeichen übereinstimmen. */
+     Tab „Fällig", damit die Zahl am Buch und das Tab-Abzeichen übereinstimmen.
+     Getrennt nach überfällig und bald, weil davon die Farbe abhängt. */
   function actionableCount(profile) {
-    if (!profile || !profile.birthdate) return 0;
-    let n = 0;
+    const leer = { gesamt: 0, ueberfaellig: 0 };
+    if (!profile || !profile.birthdate) return leer;
+    let gesamt = 0;
+    let ueberfaellig = 0;
     for (const i of computeDueItems(profile)) {
       if (displayStateFor(i.vaccine, profile) !== "shown") continue;
-      if (i.status === "overdue" || i.status === "soon") n++;
+      if (i.status === "overdue") {
+        gesamt++;
+        ueberfaellig++;
+      } else if (i.status === "soon") gesamt++;
       else if (
         i.status === "optional" &&
         recordsFor(profile, i.vaccine.id).length === 0 &&
         (travelCountriesFor(i.vaccine.id, profile).length ||
           isMonitored(i.vaccine.id, profile))
       )
-        n++;
+        gesamt++;
     }
-    return n;
+    return { gesamt, ueberfaellig };
   }
 
   function renderBookShelf() {
@@ -1106,8 +1112,11 @@
       .map((p) => {
         const b = bookOf(p);
         const offen = actionableCount(p);
-        const abzeichen = offen
-          ? `<span class="book-badge" title="${offen} Impfung(en) stehen an">${offen}</span>`
+        // Gleiche Regel wie am Tab „Fällig": Rot nur bei Überfälligem.
+        const abzeichen = offen.gesamt
+          ? `<span class="book-badge${
+              offen.ueberfaellig ? "" : " book-badge-soon"
+            }" title="${offen.gesamt} Impfung(en) stehen an">${offen.gesamt}</span>`
           : "";
         return `
           <button class="book ${p.id === aktiv.id ? "active" : ""}" data-pid="${p.id}"
@@ -1366,6 +1375,10 @@
     const actionable = due.length + soon.length + rec.length;
     count.textContent = actionable;
     count.classList.toggle("hidden", actionable === 0);
+    /* Rot schlägt Gelb: Sobald etwas überfällig ist, zählt nur noch das —
+       auch wenn zusätzlich Termine bald anstehen. Gelb bleibt dem Fall
+       vorbehalten, dass nichts überfällig, aber etwas in Sicht ist. */
+    count.classList.toggle("badge-soon", due.length === 0 && actionable > 0);
 
     const dueCard = (i) => {
       const meta = STATUS_META[i.status];
@@ -1658,6 +1671,23 @@
       ? `<div class="vac-badges">${badges.join("")}</div>`
       : "";
 
+    /* „Wegen Alter ausblenden" nur dort anbieten, wo das Alter tatsächlich
+       eine Rolle spielt: Impfungen mit oberer Altersgrenze, altersgebundene
+       Gruppen (Kindes-/Jugendalter, ab 60) und früher übliche Impfungen.
+       Bei Reise- und Indikationsimpfungen entscheidet nicht das Alter,
+       sondern der Anlass — dort wäre der Knopf sinnlos. */
+    const ALTERSGRUPPEN = ["kind", "jugend", "senior", "historisch"];
+    const alterRelevant =
+      INFANT_ONLY[vac.id] != null ||
+      vac.retired === true ||
+      ALTERSGRUPPEN.includes(vac.group);
+    const ageHideBtn = alterRelevant
+      ? `<button class="btn-hide btn-agehide" data-vaccine="${vac.id}" title="Ausblenden, weil sie in deinem Alter nicht mehr empfohlen ist">${svgIcon(
+          "calendar",
+          "ic-btn"
+        )}Wegen Alter ausblenden</button>`
+      : "";
+
     const canMonitor = VALID_YEARS[vac.id] || vac.group === "senior";
     const monitorBtn = canMonitor
       ? `<button class="btn-hide btn-monitor${
@@ -1688,13 +1718,10 @@
         <div class="foot-actions">
           ${monitorBtn}
           <button class="btn-hide btn-collapse" data-vaccine="${vac.id}" title="Diese Impfung ausblenden">${svgIcon(
-      "x",
+      "ban",
       "ic-btn"
     )}Ausblenden</button>
-          <button class="btn-hide btn-agehide" data-vaccine="${vac.id}" title="Ausblenden, weil sie in deinem Alter nicht mehr empfohlen ist">${svgIcon(
-      "calendar",
-      "ic-btn"
-    )}Wegen Alter ausblenden</button>
+          ${ageHideBtn}
           <button class="btn-small add-record" data-vaccine="${vac.id}">+ Impfung eintragen</button>
         </div>
       </div>`;
@@ -1705,9 +1732,9 @@
     row.querySelector(".btn-collapse").addEventListener("click", () =>
       setVState(vac.id, "collapsed")
     );
-    row.querySelector(".btn-agehide").addEventListener("click", () =>
-      setVState(vac.id, "age-hidden")
-    );
+    const alterBtn = row.querySelector(".btn-agehide");
+    if (alterBtn)
+      alterBtn.addEventListener("click", () => setVState(vac.id, "age-hidden"));
     const monBtn = row.querySelector(".btn-monitor");
     if (monBtn)
       monBtn.addEventListener("click", () => toggleMonitor(vac.id));

@@ -206,6 +206,12 @@ body {
   font-weight: 700;
   vertical-align: middle;
 }
+/* „Bald fällig": gelbes Abzeichen mit dunkler Schrift — Weiß auf Gelb wäre
+   nicht lesbar. Rot bleibt dem Überfälligen vorbehalten. */
+.badge.badge-soon {
+  background: #e8a81c;
+  color: #2a2005;
+}
 .hidden {
   display: none !important;
 }
@@ -1970,6 +1976,11 @@ dialog#quick-dialog::backdrop {
   line-height: 18px;
   text-align: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+/* Gelb, wenn nichts überfällig ist — gleiche Regel wie am Tab „Fällig". */
+.book-badge.book-badge-soon {
+  background: #e8a81c;
+  color: #2a2005;
 }
 .book-name {
   font-size: 0.78rem;

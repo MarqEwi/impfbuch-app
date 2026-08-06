@@ -380,7 +380,17 @@ const STIKO_SCHEDULE = [
       "lebenslang im Körper und kann Jahrzehnte später als Gürtelrose " +
       "zurückkehren.",
     ageInfo:
-      "Zwei Dosen mit 11 und 15 Monaten. Bei Kindern und Jugendlichen ohne Windpocken-Erkrankung jederzeit nachholbar.",
+      "Zwei Dosen mit 11 und 15 Monaten. Bei Kindern und Jugendlichen ohne " +
+      "Windpocken-Erkrankung jederzeit nachholbar. Als Standardimpfung für " +
+      "Erwachsene nicht mehr vorgesehen — deshalb blendet die App sie ab 18 " +
+      "aus.",
+    noBooster:
+      "Für Erwachsene gibt es keine Standardempfehlung mehr. Sie kann aber " +
+      "bei besonderem Anlass sinnvoll sein — etwa bei Kinderwunsch ohne " +
+      "durchgemachte Windpocken, vor einer Therapie, die das Immunsystem " +
+      "unterdrückt, oder im Gesundheitsdienst. Das klärt am besten deine " +
+      "Ärztin oder dein Arzt. Über die Schaltfläche „Trotzdem einblenden“ " +
+      "holst du die Impfung jederzeit zurück in die Liste.",
     source: "kalender",
     series: [
       { label: "1. Dosis", ageMonths: 11 * MONTH },
@@ -968,6 +978,10 @@ const MAX_AGE_YEARS = {
   rsv_saeugling: 1, // nur 1. RSV-Saison, Nachholen bis zum 1. Geburtstag
   hepatitis_b: 18, // Standardimpfung/Nachholen bis unter 18 Jahre
   hpv: 18, // Nachholen bis unter 18 Jahre
+  // Standardimpfung nur für Kinder und Jugendliche. Für Erwachsene bleibt
+  // sie bei besonderem Anlass möglich (siehe noBooster) — deshalb nur
+  // ausblenden, nicht entfernen.
+  varizellen: 18,
   meningokokken_acwy: 25, // Nachholen bis unter 25 Jahre
 };
 // Alter Name, weiterhin exportiert, damit nichts bricht.
