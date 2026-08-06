@@ -80,6 +80,7 @@ const GROUPS = {
   senior: { label: "Ab 60 Jahren", color: "#2c3e50" },
   indikation: { label: "Indikations-/Reiseimpfung", color: "#5b6768" },
   speziell: { label: "Spezielle Impfungen (Reise & Beruf)", color: "#6d4c41" },
+  historisch: { label: "Früher übliche Impfungen", color: "#7a6a55" },
 };
 
 // Standard-Grundserie eines Säuglings (2+1-Schema).
@@ -743,6 +744,136 @@ const STIKO_SCHEDULE = [
     ],
     onDemand: true,
     riskNote: "Reiseimpfung für Risikogebiete.",
+  },
+
+  /* ----------------------------------- Früher übliche Impfungen (Archiv) --
+   * Impfungen aus alten Impfausweisen. Sie werden NICHT mehr empfohlen
+   * (retired) und erzeugen daher keine Fälligkeit — man soll sie aber
+   * eintragen können, damit der Impfpass vollständig ist.
+   */
+  {
+    id: "pocken",
+    name: "Pocken",
+    fullName: "Pocken (Variola) — historisch",
+    group: "historisch",
+    retired: true,
+    onDemand: true,
+    diseaseTitle: "Was waren Pocken?",
+    disease:
+      "Eine schwere Virusinfektion, die über Tröpfchen und Hautkontakt " +
+      "übertragen wurde. Die Pocken gelten seit 1980 weltweit als " +
+      "ausgerottet — als bislang einzige Krankheit des Menschen.",
+    info:
+      "Wird nicht mehr geimpft. In Deutschland bestand bis 1976 eine " +
+      "Impfpflicht, 1983 wurde die Impfung ganz eingestellt.",
+    ageInfo:
+      "Nur zur Dokumentation alter Impfausweise. Erkennbar oft an einer " +
+      "runden, leicht eingesunkenen Narbe am Oberarm.",
+    noBooster:
+      "Die Krankheit gibt es nicht mehr — eine Auffrischung ist weder nötig " +
+      "noch vorgesehen.",
+    source: "stiko",
+    series: [
+      { label: "Erstimpfung", ageMonths: 12 * MONTH },
+      { label: "Wiederimpfung", ageMonths: 6 * YEAR },
+    ],
+  },
+  {
+    id: "bcg",
+    name: "Tuberkulose (BCG)",
+    fullName: "Tuberkulose-Impfung (BCG) — historisch",
+    group: "historisch",
+    retired: true,
+    onDemand: true,
+    diseaseTitle: "Was ist Tuberkulose?",
+    disease:
+      "Eine bakterielle Infektion, die vor allem die Lunge befällt und über " +
+      "Tröpfchen beim Husten übertragen wird. In Deutschland ist sie " +
+      "selten geworden, weltweit aber weiterhin verbreitet.",
+    info:
+      "Wird in Deutschland nicht mehr empfohlen. Die STIKO hat die " +
+      "BCG-Impfung 1998 zurückgezogen, weil die Tuberkulose hierzulande " +
+      "selten ist und der Impfschutz nur begrenzt wirkte.",
+    ageInfo:
+      "Nur zur Dokumentation alter Impfausweise. Wurde früher meist im " +
+      "Säuglingsalter gegeben; erkennbar oft an einer kleinen Narbe am " +
+      "Oberarm.",
+    noBooster:
+      "Da die Impfung nicht mehr empfohlen wird, erinnert die App nicht an " +
+      "eine Auffrischung.",
+    source: "stiko",
+    series: [{ label: "Impfung", ageMonths: 0 }],
+  },
+  {
+    id: "masern_einzeln",
+    name: "Masern (einzeln)",
+    fullName: "Masern — Einzelimpfung (historisch)",
+    group: "historisch",
+    retired: true,
+    onDemand: true,
+    diseaseTitle: "Was sind Masern?",
+    disease:
+      "Eine extrem ansteckende Virusinfektion, die über die Luft übertragen " +
+      "wird — auch ohne direkten Kontakt.",
+    info:
+      "Vor Einführung der Kombinationsimpfung wurde einzeln gegen Masern " +
+      "geimpft. Heute wird immer der Dreifach-Impfstoff (MMR) verwendet.",
+    ageInfo:
+      "Nur zur Dokumentation alter Impfausweise. Wichtig: Zwei " +
+      "dokumentierte Masern-Impfungen gelten als vollständiger Masernschutz " +
+      "— auch wenn sie einzeln gegeben wurden. Bei Unsicherheit ärztlich " +
+      "klären lassen.",
+    source: "kalender",
+    series: [
+      { label: "1. Dosis", ageMonths: 12 * MONTH },
+      { label: "2. Dosis", ageMonths: 6 * YEAR },
+    ],
+  },
+  {
+    id: "mumps_einzeln",
+    name: "Mumps (einzeln)",
+    fullName: "Mumps — Einzelimpfung (historisch)",
+    group: "historisch",
+    retired: true,
+    onDemand: true,
+    diseaseTitle: "Was ist Mumps?",
+    disease:
+      "Eine Virusinfektion, die über Tröpfchen übertragen wird und typisch " +
+      "die Ohrspeicheldrüsen anschwellen lässt (Ziegenpeter).",
+    info:
+      "Wurde früher als Einzelimpfung mit einem Lebendimpfstoff gegeben. " +
+      "Heute ist Mumps Teil der Dreifach-Impfung (MMR).",
+    ageInfo:
+      "Nur zur Dokumentation alter Impfausweise.",
+    source: "kalender",
+    series: [
+      { label: "1. Dosis", ageMonths: 12 * MONTH },
+      { label: "2. Dosis", ageMonths: 6 * YEAR },
+    ],
+  },
+  {
+    id: "roeteln_einzeln",
+    name: "Röteln (einzeln)",
+    fullName: "Röteln — Einzelimpfung (historisch)",
+    group: "historisch",
+    retired: true,
+    onDemand: true,
+    diseaseTitle: "Was sind Röteln?",
+    disease:
+      "Eine meist milde Virusinfektion mit Hautausschlag, die über " +
+      "Tröpfchen übertragen wird. Gefährlich ist sie vor allem in der " +
+      "Schwangerschaft, weil sie das ungeborene Kind schädigen kann.",
+    info:
+      "Wurde früher einzeln geimpft — vor allem bei Mädchen und jungen " +
+      "Frauen. Heute ist Röteln Teil der Dreifach-Impfung (MMR).",
+    ageInfo:
+      "Nur zur Dokumentation alter Impfausweise. Vor einer Schwangerschaft " +
+      "lohnt sich eine ärztliche Prüfung des Rötelnschutzes.",
+    source: "kalender",
+    series: [
+      { label: "1. Dosis", ageMonths: 12 * MONTH },
+      { label: "2. Dosis", ageMonths: 6 * YEAR },
+    ],
   },
 ];
 

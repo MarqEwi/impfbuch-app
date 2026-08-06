@@ -1722,10 +1722,7 @@
         (v) => v.group === gid && displayStateFor(v, active) !== "hidden"
       );
       if (!vacs.length) continue;
-      html += `<div class="q-group-head" style="--group-color:${meta.color}">${esc(
-        meta.label
-      )}</div><div class="q-group">`;
-      html += vacs
+      const items = vacs
         .map(
           (v) => `
           <label class="tgt-item">
@@ -1734,6 +1731,23 @@
           </label>`
         )
         .join("");
+      // Früher übliche Impfungen zugeklappt anbieten: Sie betreffen nur alte
+      // Impfausweise und sollen die normale Auswahl nicht überladen.
+      if (gid === "historisch") {
+        html += `
+          <details class="q-historic">
+            <summary style="--group-color:${meta.color}">
+              ${esc(meta.label)}
+              <span class="q-historic-hint">Pocken, BCG, Masern/Mumps/Röteln einzeln …</span>
+            </summary>
+            <div class="q-group">${items}</div>
+          </details>`;
+        continue;
+      }
+      html += `<div class="q-group-head" style="--group-color:${meta.color}">${esc(
+        meta.label
+      )}</div><div class="q-group">`;
+      html += items;
       html += `</div>`;
     }
     box.innerHTML = html;
