@@ -1,0 +1,448 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Store-Grafiken</title>
+<style>
+  body { background:#111; color:#ddd; font:14px system-ui; padding:20px; }
+  canvas { max-width:200px; height:auto; margin:6px; vertical-align:top;
+           border:1px solid #444; background:#000; }
+</style>
+<div id="ziel"></div>
+<script>
+/* =====================================================================
+ * Erzeugt die Play-Store-Grafiken aus den Geräte-Aufnahmen.
+ *
+ * Die Aufnahmen sind 1080x2340. Persönliche Daten (Name, Geburtsdatum)
+ * werden nicht verpixelt, sondern sauber ersetzt: eine textfreie Zeile
+ * derselben Fläche wird über den Text gekachelt, danach wird neuer Text
+ * gesetzt. Das erhält Papierstruktur und Kanten exakt.
+ * ================================================================== */
+
+const Q = { w: 1080, h: 2340 };          // Maße der Vorlagen
+const BLATT = { w: 1080, h: 1920 };      // Maße eines Store-Bildes
+
+/* Bildschirm im Handy-Modell.
+   Die Breite bestimmt, wie stark die Vorlage verkleinert wird — und damit,
+   wie weit unten die aufgefüllte Fläche der geschnittenen Vorlagen landet.
+   Bei 900 liegt sie unterhalb des Blattrandes und ist nicht mehr zu sehen. */
+const HANDY = { x: 90, y: 470, w: 900, rand: 19, radius: 69 };
+/* Bildschirmhöhe so gewählt, dass eine ungeschnittene Vorlage (Zeile 105 bis
+   zur Navigationsleiste) sie ausfüllt — sonst bliebe auch dort eine
+   aufgefüllte Fläche stehen. */
+const SCHIRM = { w: HANDY.w - 2 * HANDY.rand, h: 1700 };
+const STATUS_H = 48;                     // eigene, saubere Statusleiste
+const MASS = SCHIRM.w / Q.w;             // 1 Vorlagen-Pixel -> Geräte-Pixel
+const INHALT_H = SCHIRM.h - STATUS_H;    // Geräte-Pixel für den Inhalt
+const QUELL_H = Math.round(INHALT_H / MASS);  // dafür nötige Vorlagen-Pixel
+
+/* Fläche des Namensfeldes und des Geburtsdatums in den Impfpass-Aufnahmen */
+/* `ruhig` muss ein garantiert textfreier Streifen derselben Fläche sein —
+   Unterlängen der Zeile darüber würden sonst mitgekachelt. */
+const NAME = { textOben: 436, textUnten: 495, ruhig: [420, 440],
+               x: 147, grundlinie: 477, groesse: '600 48px' };
+const GEB  = { textOben: 600, textUnten: 645, ruhig: [578, 600],
+               x: 133, grundlinie: 635, groesse: '700 44px' };
+
+const UNTERKANTE = 2192;   // darunter beginnt die Navigationsleiste (ab 2196)
+
+const BILDER = [
+  { datei: "132140", von: 105, schnitt: [1672, 1966], person: "hell",
+     titel: ["Dein Impfpass —", "immer dabei"],
+     unter: "Alle Impfungen an einem Ort. Ohne Konto, ohne Cloud." },
+  /* Die drei fernen Termine leiten sich vom Geburtstag ab und würden ihn
+     verraten — sie werden auf das Ersatz-Datum umgeschrieben. */
+  { datei: "132227", von: 232,
+     datum: [{ y: 1748, text: "12.05.2051" },
+             { y: 1898, text: "12.05.2051" },
+             { y: 2048, text: "12.05.2066" }],
+     titel: ["Du siehst sofort,", "was ansteht"],
+     unter: "Fälligkeiten und Auffrischungen werden mitgerechnet." },
+  /* Aufnahme mit Suchfeld: zeigt Auswahl UND Ergebnis. Bei der anderen
+     Reise-Aufnahme läge die Überschrift „Thailand" im Anschnitt. */
+  { datei: "132248", von: 114,
+     titel: ["Reiseimpfungen", "für dein Ziel"],
+     unter: "Über 100 Länder mit konkreten Empfehlungen." },
+  { datei: "132401", von: 105,
+     titel: ["Erinnerung zur", "rechten Zeit"],
+     unter: "Dezente Hinweise — und alles bleibt auf deinem Gerät." },
+  { datei: "132309", von: 105, schnitt: [1672, 1966], person: "dunkel", hell: true,
+     titel: ["Hell, neutral", "oder dunkel"],
+     unter: "Wähle die Ansicht, die dir am besten liegt." },
+];
+
+/* ------------------------------------------------------------ Werkzeug */
+const laden = (u) => new Promise((ok, weg) => {
+  const i = new Image(); i.onload = () => ok(i); i.onerror = weg; i.src = u;
+});
+
+function rundeck(g, x, y, w, h, r) {
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+
+function farbeAn(g, x, y) {
+  const d = g.getImageData(x, y, 1, 1).data;
+  return { r: d[0], g: d[1], b: d[2], css: `rgb(${d[0]},${d[1]},${d[2]})`,
+           hell: (d[0] * 299 + d[1] * 587 + d[2] * 114) / 1000 > 128 };
+}
+
+/* Vorherrschende Farbe einer Bildzeile — unempfindlich gegen Text,
+   der zufällig an der Messstelle liegt. */
+function zeilenfarbe(g, y, breite) {
+  const d = g.getImageData(0, y, breite, 1).data;
+  const werte = [];
+  for (let x = 0; x < breite; x += 7) {
+    const o = x * 4;
+    werte.push([d[o], d[o + 1], d[o + 2]]);
+  }
+  werte.sort((a, b) => (a[0] + a[1] + a[2]) - (b[0] + b[1] + b[2]));
+  const m = werte[Math.floor(werte.length * 0.7)];   // heller Anteil = Fläche
+  return `rgb(${m[0]},${m[1]},${m[2]})`;
+}
+
+/* --------------------------------------------- Vorlage aufbereiten */
+/* Ergebnis: Leinwand 1080 x QUELL_H mit ersetzten Personendaten und
+   herausgeschnittenem Abschnitt. */
+async function vorlage(spec) {
+  const img = await laden(`/store/Screenshot_20260806_${spec.datei}_Impfbuch.jpg`);
+  const roh = document.createElement("canvas");
+  roh.width = Q.w; roh.height = Q.h;
+  const r = roh.getContext("2d");
+  r.drawImage(img, 0, 0);
+
+  /* 1) Personendaten ersetzen ------------------------------------- */
+  if (spec.person) {
+    const dunkel = spec.person === "dunkel";
+    const tinte = dunkel ? "#ece2cc" : "#191713";
+
+    const ueberdecken = (bereich, ruhig) => {
+      const [rv, rb] = ruhig;
+      const streifen = r.getImageData(0, rv, Q.w, rb - rv);
+      for (let y = bereich[0]; y < bereich[1]; y += rb - rv) {
+        r.putImageData(streifen, 0, y);
+      }
+    };
+    ueberdecken([NAME.textOben, NAME.textUnten], NAME.ruhig);
+    ueberdecken([GEB.textOben, GEB.textUnten], GEB.ruhig);
+
+    r.fillStyle = tinte;
+    r.textAlign = "left";
+    r.font = `${NAME.groesse} "Segoe UI", system-ui, sans-serif`;
+    r.fillText("Anna Berger", NAME.x, NAME.grundlinie);
+    r.font = `${GEB.groesse} "Segoe UI", system-ui, sans-serif`;
+    r.fillText("12.05.1991 · 35 Jahre", GEB.x, GEB.grundlinie);
+  }
+
+  /* Vom Geburtstag abgeleitete Termine ersetzen */
+  if (spec.datum) {
+    r.textAlign = "left";
+    r.font = '700 37px "Segoe UI", system-ui, sans-serif';
+    for (const eintrag of spec.datum) {
+      const grund = farbeAn(r, 200, eintrag.y - 45);
+      r.fillStyle = grund.css;
+      r.fillRect(70, eintrag.y - 38, 250, 50);
+      r.fillStyle = "#1c1a16";
+      r.fillText(eintrag.text, 88, eintrag.y);
+    }
+  }
+
+  /* 2) Abschnitt herausschneiden und Bild wieder zusammensetzen ---- */
+  const aus = document.createElement("canvas");
+  aus.width = Q.w; aus.height = QUELL_H;
+  const a = aus.getContext("2d");
+  const von = spec.von;
+
+  if (spec.schnitt) {
+    const [s0, s1] = spec.schnitt;
+    const oben = s0 - von;
+    a.drawImage(roh, 0, von, Q.w, oben, 0, 0, Q.w, oben);
+    const rest = QUELL_H - oben;
+    /* Nur bis über die Navigationsleiste hinaus lesen; der Rest wird mit
+       der Kartenfarbe aufgefüllt und liegt am unteren Blattrand. */
+    const vorhanden = Math.min(rest, UNTERKANTE - s1);
+    a.drawImage(roh, 0, s1, Q.w, vorhanden, 0, oben, Q.w, vorhanden);
+    if (vorhanden < rest) {
+      a.fillStyle = zeilenfarbe(a, oben + vorhanden - 4, Q.w);
+      a.fillRect(0, oben + vorhanden - 1, Q.w, QUELL_H);
+    }
+  } else {
+    const vorhanden = Math.min(QUELL_H, UNTERKANTE - von);
+    a.drawImage(roh, 0, von, Q.w, vorhanden, 0, 0, Q.w, vorhanden);
+    if (vorhanden < QUELL_H) {
+      a.fillStyle = zeilenfarbe(a, vorhanden - 4, Q.w);
+      a.fillRect(0, vorhanden - 1, Q.w, QUELL_H);
+    }
+  }
+  aus.__saum = farbeAn(a, 24, 6);   // Farbe für die Statusleiste
+  return aus;
+}
+
+/* ------------------------------------------------ Hintergrund malen */
+function hintergrund(g, w, h, hell) {
+  g.save();
+  const l = g.createLinearGradient(0, 0, w * 0.35, h);
+  if (hell) {
+    /* Für die Folie zur Ansichtswahl: heller Grund, damit das dunkle
+       Handy sich abhebt. */
+    l.addColorStop(0, "#f6e2a4");
+    l.addColorStop(0.55, "#e8c25c");
+    l.addColorStop(1, "#cf9c2c");
+  } else {
+    l.addColorStop(0, "#463718");
+    l.addColorStop(0.55, "#2a2211");
+    l.addColorStop(1, "#17130b");
+  }
+  g.fillStyle = l;
+  g.fillRect(0, 0, w, h);
+  if (hell) {
+    const b = (cx, cy, rad, a) => {
+      const rg = g.createRadialGradient(cx, cy, 0, cx, cy, rad);
+      rg.addColorStop(0, `rgba(255,250,232,${a})`);
+      rg.addColorStop(1, "rgba(255,250,232,0)");
+      g.fillStyle = rg;
+      g.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+    };
+    b(w * 0.15, h * 0.12, w * 0.8, 0.55);
+    b(w * 0.9, h * 0.75, w * 0.7, 0.25);
+    g.restore();
+    return;
+  }
+
+  const blase = (cx, cy, rad, farbe, staerke) => {
+    const rg = g.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    rg.addColorStop(0, farbe.replace("ALPHA", staerke));
+    rg.addColorStop(1, farbe.replace("ALPHA", "0"));
+    g.fillStyle = rg;
+    g.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+  };
+  blase(w * 0.12, h * 0.10, w * 0.75, "rgba(243,199,64,ALPHA)", 0.22);
+  blase(w * 0.95, h * 0.30, w * 0.70, "rgba(224,148,44,ALPHA)", 0.16);
+  blase(w * 0.50, h * 0.95, w * 0.85, "rgba(120,86,30,ALPHA)", 0.30);
+  g.restore();
+}
+
+/* ------------------------------------------------- Handy zeichnen */
+/* Zeichnet Rahmen + Bildschirm; der Inhalt kommt aus `vorl`. */
+function handy(g, x, y, w, hoehe, vorl, radius) {
+  const rand = Math.round(w * (HANDY.rand / HANDY.w));
+  const r = radius != null ? radius : Math.round(w * (HANDY.radius / HANDY.w));
+
+  g.save();
+  g.shadowColor = "rgba(0,0,0,0.55)";
+  g.shadowBlur = Math.round(w * 0.12);
+  g.shadowOffsetY = Math.round(w * 0.05);
+  rundeck(g, x, y, w, hoehe, r);
+  g.fillStyle = "#0d0d0f";
+  g.fill();
+  g.restore();
+
+  /* schmaler Lichtsaum am Rahmen */
+  g.save();
+  rundeck(g, x + 1, y + 1, w - 2, hoehe - 2, r - 1);
+  g.strokeStyle = "rgba(255,255,255,0.20)";
+  g.lineWidth = 2;
+  g.stroke();
+  g.restore();
+
+  /* Bildschirm */
+  const sx = x + rand, sy = y + rand;
+  const sw = w - 2 * rand, sh = hoehe - 2 * rand;
+  const sr = r - rand + 2;
+  g.save();
+  rundeck(g, sx, sy, sw, sh, sr);
+  g.clip();
+
+  const saum = vorl.__saum;
+  const statusH = Math.round(sh * (STATUS_H / SCHIRM.h));
+  g.fillStyle = saum.css;
+  g.fillRect(sx, sy, sw, statusH);
+  g.drawImage(vorl, sx, sy + statusH, sw, sh - statusH);
+
+  /* Uhrzeit und Symbole in der Statusleiste */
+  const tinte = saum.hell ? "rgba(20,18,12,0.85)" : "rgba(240,235,220,0.9)";
+  g.fillStyle = tinte;
+  const fs = Math.round(statusH * 0.46);
+  g.font = `600 ${fs}px "Segoe UI", system-ui, sans-serif`;
+  g.textAlign = "left";
+  g.textBaseline = "middle";
+  g.fillText("9:41", sx + statusH * 0.55, sy + statusH * 0.55);
+  /* Empfang, WLAN, Akku – schlicht angedeutet */
+  let px = sx + sw - statusH * 0.5;
+  const bh = fs * 0.52, bw = fs * 1.05;
+  px -= bw;
+  g.strokeStyle = tinte; g.lineWidth = Math.max(1.5, fs * 0.075);
+  rundeck(g, px, sy + statusH * 0.55 - bh / 2, bw, bh, bh * 0.3);
+  g.stroke();
+  g.fillRect(px + bw * 0.15, sy + statusH * 0.55 - bh * 0.28, bw * 0.62, bh * 0.56);
+  px -= fs * 1.5;
+  for (let i = 0; i < 4; i++) {
+    const bhh = fs * (0.22 + i * 0.16);
+    g.fillRect(px + i * fs * 0.26, sy + statusH * 0.55 + fs * 0.3 - bhh,
+               fs * 0.17, bhh);
+  }
+
+  /* Kameraloch */
+  g.beginPath();
+  g.arc(sx + sw / 2, sy + statusH * 0.55, Math.max(6, statusH * 0.24), 0, 7);
+  g.fillStyle = "#0a0a0c";
+  g.fill();
+
+  /* Glanz über dem Glas */
+  const gl = g.createLinearGradient(sx, sy, sx + sw * 0.7, sy + sh);
+  gl.addColorStop(0, "rgba(255,255,255,0.13)");
+  gl.addColorStop(0.32, "rgba(255,255,255,0.03)");
+  gl.addColorStop(0.55, "rgba(255,255,255,0)");
+  g.fillStyle = gl;
+  g.fillRect(sx, sy, sw, sh);
+  g.restore();
+}
+
+/* ------------------------------------------------- Ein Store-Bild */
+function blatt(vorl, spec) {
+  const c = document.createElement("canvas");
+  c.width = BLATT.w; c.height = BLATT.h;
+  const g = c.getContext("2d");
+  hintergrund(g, BLATT.w, BLATT.h, spec.hell);
+
+  g.textAlign = "center";
+  g.textBaseline = "alphabetic";
+  g.fillStyle = spec.hell ? "#241c0c" : "#fffdf7";
+  g.font = 'bold 72px Georgia, "Times New Roman", serif';
+  let y = 168;
+  for (const zeile of spec.titel) { g.fillText(zeile, BLATT.w / 2, y); y += 86; }
+
+  g.fillStyle = spec.hell ? "rgba(60,46,18,0.85)" : "rgba(240,222,170,0.88)";
+  g.font = '400 36px "Segoe UI", system-ui, sans-serif';
+  g.fillText(spec.unter, BLATT.w / 2, y + 26);
+
+  handy(g, HANDY.x, HANDY.y, HANDY.w, SCHIRM.h + 2 * HANDY.rand, vorl);
+  return c;
+}
+
+/* ------------------------------------- Vorstellungsgrafik 1024x500 */
+function vorstellung(vorl, symbol) {
+  const W = 1024, H = 500;
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  hintergrund(g, W, H);
+
+  /* Handy, leicht gekippt, rechts.
+     Durch die Drehung braucht es mehr Höhe als seine eigene: bei Breite w
+     und Höhe 2,005·w ergibt sich eine gedrehte Halbhöhe von rund 1,079·w.
+     Damit es vollständig ins Bild passt, muss 2·1,079·w unter die Blatthöhe
+     abzüglich Rand bleiben — daher diese Breite. */
+  const pw = 250;
+  const ph = Math.round(pw * (SCHIRM.h + 2 * HANDY.rand) / HANDY.w);
+  g.save();
+  g.translate(W * 0.755, H * 0.565);
+  g.rotate(-11 * Math.PI / 180);
+  handy(g, -pw / 2, -ph / 2, pw, ph, vorl, 30);
+  g.restore();
+
+  /* Linke Seite: Symbol, Name, Untertitel, Merkmale */
+  const lx = 84;   // Sicherheitsabstand: Play beschneidet die Ränder
+  if (symbol) {
+    g.save();
+    g.shadowColor = "rgba(0,0,0,0.5)";
+    g.shadowBlur = 18; g.shadowOffsetY = 6;
+    rundeck(g, lx, 74, 84, 84, 20);
+    g.clip();
+    g.drawImage(symbol, lx, 74, 84, 84);
+    g.restore();
+  }
+
+  g.textAlign = "left";
+  g.fillStyle = "#fffdf7";
+  g.font = 'bold 74px Georgia, "Times New Roman", serif';
+  g.fillText("Impfbuch", lx, 258);
+
+  g.fillStyle = "rgba(243,214,143,0.92)";
+  g.font = '400 27px "Segoe UI", system-ui, sans-serif';
+  g.fillText("Impfpass, Fälligkeiten und Reiseimpfungen", lx, 300);
+
+  const merkmale = ["Ohne Konto", "Offline", "Über 100 Länder"];
+  let mx = lx;
+  g.font = '600 21px "Segoe UI", system-ui, sans-serif';
+  for (const m of merkmale) {
+    const b = g.measureText(m).width + 34;
+    g.fillStyle = "rgba(255,253,247,0.13)";
+    rundeck(g, mx, 336, b, 44, 22);
+    g.fill();
+    g.strokeStyle = "rgba(255,253,247,0.28)";
+    g.lineWidth = 1.5;
+    rundeck(g, mx, 336, b, 44, 22);
+    g.stroke();
+    g.fillStyle = "#fffdf7";
+    g.fillText(m, mx + 17, 364);
+    mx += b + 12;
+  }
+
+  g.fillStyle = "rgba(240,222,170,0.72)";
+  g.font = '400 21px "Segoe UI", system-ui, sans-serif';
+  g.fillText("Alle Daten bleiben auf deinem Gerät", lx, 424);
+  return c;
+}
+
+/* ------------------------------------------------------------ Lauf */
+(async () => {
+  const ziel = document.getElementById("ziel");
+  const symbol = await laden("/icons/icon-512.png");
+  const fertig = [];
+
+  for (let i = 0; i < BILDER.length; i++) {
+    const vorl = await vorlage(BILDER[i]);
+    const c = blatt(vorl, BILDER[i]);
+    fertig.push([`store-${i + 1}.jpg`, c]);
+    ziel.appendChild(c);
+    if (i === 0) {
+      /* Für die Vorstellungsgrafik ohne Schnitt: dort ist das ganze Handy zu
+         sehen, eine aufgefüllte Fläche am unteren Rand würde auffallen. */
+      const voll = await vorlage({ ...BILDER[i], schnitt: null });
+      const fg = vorstellung(voll, symbol);
+      fertig.push(["vorstellungsgrafik.jpg", fg]);
+      ziel.appendChild(fg);
+    }
+  }
+
+  window.__dateien = fertig;
+
+  /* Bilder an den Empfänger schicken (siehe scripts/empfaenger.mjs).
+     Zuverlässiger als ein Download: der Browser drosselt wiederholte
+     automatische Downloads und lässt die Dateien unfertig liegen. */
+  const ENDNAMEN = {
+    "store-1.jpg": "store-1-impfpass.jpg",
+    "store-2.jpg": "store-2-faellig.jpg",
+    "store-3.jpg": "store-3-reise.jpg",
+    "store-4.jpg": "store-4-erinnerung.jpg",
+    "store-5.jpg": "store-5-ansichten.jpg",
+    "vorstellungsgrafik.jpg": "vorstellungsgrafik.jpg",
+  };
+  window.__senden = async () => {
+    const bericht = [];
+    for (const [name, c] of fertig) {
+      const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.94));
+      const antwort = await fetch(
+        "http://localhost:8125/save?name=" + encodeURIComponent(ENDNAMEN[name]),
+        { method: "POST", body: blob }
+      );
+      bericht.push(`${ENDNAMEN[name]}: ${antwort.status}`);
+    }
+    return bericht;
+  };
+
+  window.__speichern = () => {
+    fertig.forEach(([name, c], i) => setTimeout(() => {
+      const a = document.createElement("a");
+      a.download = name;
+      a.href = c.toDataURL("image/jpeg", 0.94);
+      a.click();
+    }, i * 500));
+  };
+  document.title = "fertig: " + fertig.length;
+})();
+</script>
