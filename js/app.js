@@ -1056,7 +1056,7 @@
             .join(", ")}</div>`
         : "";
       return `
-        <div class="reminder ${meta.cls}">
+        <div class="reminder ${meta.cls} rem-clickable" data-goto="${i.vaccine.id}" title="Im Impfpass ansehen">
           <div class="rem-body">
             <div class="rem-title">${esc(i.vaccine.name)}</div>
             <div class="rem-sub">${sub}</div>
@@ -1072,7 +1072,7 @@
         ? `🧳 Für Reise empfohlen: ${e.countries.map((c) => esc(c.name)).join(", ")}`
         : `Zur Überwachung ausgewählt`;
       return `
-        <div class="reminder st-soon">
+        <div class="reminder st-soon rem-clickable" data-goto="${i.vaccine.id}" title="Im Impfpass ansehen">
           <div class="rem-body">
             <div class="rem-title">${esc(i.vaccine.name)}</div>
             <div class="rem-sub">Noch nicht geimpft</div>
@@ -1088,7 +1088,7 @@
         ? `Gültig bis ${fmtDate(i.next.dueDate)}`
         : `${esc(i.next.label)}`;
       return `
-        <div class="upcoming-row">
+        <div class="upcoming-row rem-clickable" data-goto="${i.vaccine.id}" title="Im Impfpass ansehen">
           <span class="up-date">${fmtDate(i.next.dueDate)}</span>
           <span class="up-body">
             <span class="up-title">${esc(i.vaccine.name)}</span>
@@ -1121,8 +1121,33 @@
 
     box.innerHTML = html;
     box.querySelectorAll(".rem-action").forEach((btn) => {
-      btn.addEventListener("click", () => openRecordDialog(btn.dataset.vaccine));
+      btn.addEventListener("click", (ev) => {
+        ev.stopPropagation(); // nicht zusätzlich in den Impfpass springen
+        openRecordDialog(btn.dataset.vaccine);
+      });
     });
+    // Tippen auf den Eintrag springt in den Impfpass zu genau dieser Impfung —
+    // dort sind die bisherigen Eintragungen zu sehen.
+    box.querySelectorAll("[data-goto]").forEach((row) => {
+      row.addEventListener("click", () => gotoVaccineInPass(row.dataset.goto));
+    });
+  }
+
+  /*
+   * Wechselt in den Impfpass und hebt die gewählte Impfung kurz hervor. Ist
+   * sie dort eingeklappt (z. B. altersbedingt), wird trotzdem hingesprungen —
+   * die graue Zeile nennt dann den Grund.
+   */
+  function gotoVaccineInPass(vacId) {
+    if (!vacId) return;
+    activateTab("pass");
+    const row = document.querySelector('[data-vac-row="' + vacId + '"]');
+    if (!row) return;
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+    row.classList.remove("vac-flash");
+    void row.offsetWidth; // Animation neu starten, falls dieselbe Zeile
+    row.classList.add("vac-flash");
+    setTimeout(() => row.classList.remove("vac-flash"), 2200);
   }
 
   /* --------------------------------------------------------------- Impfpass */
@@ -1169,6 +1194,7 @@
     const reason = hiddenReason(vac, activeProfile());
     const row = document.createElement("div");
     row.className = "vac-row collapsed-row";
+    row.dataset.vacRow = vac.id;
     row.innerHTML = `
       <div class="collapsed-head">
         <span class="collapsed-name">${esc(vac.name)}</span>
@@ -1196,6 +1222,7 @@
     const meta = STATUS_META[item.status];
     const row = document.createElement("div");
     row.className = "vac-row";
+    row.dataset.vacRow = vac.id;
 
     let entriesHtml;
     if (item.records.length) {

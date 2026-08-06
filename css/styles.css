@@ -1767,6 +1767,48 @@ dialog#quick-dialog::backdrop {
 .details-body strong {
   color: var(--ink);
 }
+/* Fällig-Einträge: antippbar → springt im Impfpass zur Impfung */
+.rem-clickable {
+  cursor: pointer;
+}
+.rem-clickable:active {
+  transform: scale(0.995);
+}
+/* Kurzes Hervorheben der angesprungenen Impfung im Impfpass */
+@keyframes vacFlash {
+  0%,
+  100% {
+    background: transparent;
+  }
+  15%,
+  60% {
+    background: rgba(233, 201, 74, 0.45);
+  }
+}
+.vac-flash {
+  animation: vacFlash 2.2s ease-in-out;
+  border-radius: 8px;
+}
+:root[data-theme="dark"] .vac-flash,
+:root[data-theme="neutral"] .vac-flash {
+  animation-name: vacFlashAlt;
+}
+@keyframes vacFlashAlt {
+  0%,
+  100% {
+    background: transparent;
+  }
+  15%,
+  60% {
+    background: rgba(255, 255, 255, 0.35);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vac-flash {
+    animation-duration: 0.01s;
+  }
+}
+
 /* Info-Fenster: Krankheitsbeschreibung, Altersangabe, Begründung, Quelle */
 .info-disease {
   background: rgba(120, 115, 100, 0.08);
