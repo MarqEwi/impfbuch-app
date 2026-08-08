@@ -1,7 +1,7 @@
 # Play-Store-Eintrag — Impfbuch-App
 
 Vorbereitete Inhalte zum Einfügen in die Google Play Console.
-Stand: August 2026, App-Version 2.4.0 (Code 13).
+Stand: August 2026, App-Version 2.4.0 (Code 14).
 
 ---
 
@@ -17,10 +17,15 @@ Impfbuch – digitaler Impfpass
 Impfpass, Fälligkeiten und Reiseimpfungen – alles bleibt auf deinem Gerät.
 ```
 
-## Vollständige Beschreibung (max. 4000 Zeichen) — 3443 Zeichen
+## Vollständige Beschreibung (max. 4000 Zeichen)
 
 ```
 Dein Impfpass im Stil des gelben Impfausweises – übersichtlich, praktisch und komplett auf deinem Gerät.
+
+HINWEIS VORWEG: Dies ist ein privates Angebot von MERCwerk. Die App vertritt keine Behörde und steht in keiner Verbindung zum Robert Koch-Institut (RKI), zur Ständigen Impfkommission (STIKO), zum Auswärtigen Amt oder zu einer anderen staatlichen Stelle. Die angezeigten Impfempfehlungen stammen aus diesen öffentlich zugänglichen Originalquellen:
+• RKI – Impfkalender: https://www.rki.de/DE/Themen/Infektionskrankheiten/Impfen/Impfkalender/impfkalender-node.html
+• RKI – Empfehlungen der STIKO: https://www.rki.de/DE/Themen/Infektionskrankheiten/Impfen/Staendige-Impfkommission/Empfehlungen-der-STIKO/empfehlungen-der-stiko-node.html
+• Auswärtiges Amt – Reisen und Gesundheit: https://www.auswaertiges-amt.de/de/ReiseUndSicherheit/reise-gesundheit
 
 ALLE IMPFUNGEN IM BLICK
 • Vollständiges Impfschema in Anlehnung an den STIKO-Impfkalender: von der Grundimmunisierung im Säuglingsalter über Auffrischungen bis zu den Impfungen ab 60
@@ -59,14 +64,7 @@ KOSTENLOS MIT WERBUNG – ODER PREMIUM
 Die App ist kostenlos und zeigt Werbung. Werbung wird nur mit deiner Einwilligung geladen; lehnst du ab, bleibt die App vollständig nutzbar. Mit dem einmaligen Kauf von Premium entfällt die Werbung, du kannst beliebig viele Profile anlegen und länderspezifische Reiseempfehlungen übernehmen.
 
 WICHTIGER HINWEIS
-Dies ist ein privates Angebot von MERCwerk und steht in keiner Verbindung zum Robert Koch-Institut (RKI), zur Ständigen Impfkommission (STIKO), zum Auswärtigen Amt oder zu einer anderen Behörde.
-
-Die App ersetzt weder den amtlichen Impfausweis noch eine ärztliche Beratung. Das hinterlegte Schema orientiert sich an den öffentlich zugänglichen STIKO-Empfehlungen; maßgeblich sind allein die Originalquellen und die Beurteilung deiner Ärztin oder deines Arztes. Individuelle Empfehlungen können abweichen. Die Reiseempfehlungen sind eine kuratierte Auswahl ohne Anspruch auf Vollständigkeit – lass dich vor Reisen ärztlich beraten.
-
-Quellen:
-RKI – Impfkalender: https://www.rki.de/DE/Themen/Infektionskrankheiten/Impfen/Impfkalender/impfkalender-node.html
-RKI – Empfehlungen der STIKO: https://www.rki.de/DE/Themen/Infektionskrankheiten/Impfen/Staendige-Impfkommission/Empfehlungen-der-STIKO/empfehlungen-der-stiko-node.html
-Auswärtiges Amt – Reisen und Gesundheit: https://www.auswaertiges-amt.de/de/ReiseUndSicherheit/reise-gesundheit
+Die App ersetzt weder den amtlichen Impfausweis noch eine ärztliche Beratung. Das hinterlegte Schema orientiert sich an den öffentlich zugänglichen STIKO-Empfehlungen; maßgeblich sind allein die oben verlinkten Originalquellen und die Beurteilung deiner Ärztin oder deines Arztes. Individuelle Empfehlungen können abweichen. Die Reiseempfehlungen sind eine kuratierte Auswahl ohne Anspruch auf Vollständigkeit – lass dich vor Reisen ärztlich beraten. Dieselben Quellenlinks findest du auch in der App unter Einstellungen → Rechtliche Hinweise.
 ```
 
 ## Versionshinweise 2.4.0 (max. 500 Zeichen) — 447 Zeichen
@@ -134,7 +132,7 @@ nötigen Geräte-Aufnahmen sind bewusst **nicht** versioniert (siehe
 
 ## Beim Hochladen beachten
 
-- **versionCode** vor jedem Upload erhöhen (zuletzt 13 / 2.4.0)
+- **versionCode** vor jedem Upload erhöhen (zuletzt 14 / 2.4.0)
 - Meldung **„AD_ID fehlt in einem aktiven Artefakt"** → immer
   **„Ohne Berechtigung einführen"** wählen. Niemals „Deklaration
   aktualisieren" — das setzt die Werbe-ID auf Nullen und kostet Einnahmen.
