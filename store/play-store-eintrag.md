@@ -23,8 +23,8 @@ Impfpass, Fälligkeiten und Reiseimpfungen – alles bleibt auf deinem Gerät.
 Dein Impfpass im Stil des gelben Impfausweises – übersichtlich, praktisch und komplett auf deinem Gerät.
 
 HINWEIS VORWEG: Dies ist ein privates Angebot von MERCwerk. Die App vertritt keine Behörde und steht in keiner Verbindung zum Robert Koch-Institut (RKI), zur Ständigen Impfkommission (STIKO), zum Auswärtigen Amt oder zu einer anderen staatlichen Stelle. Die angezeigten Impfempfehlungen stammen aus diesen öffentlich zugänglichen Originalquellen:
-• RKI – Impfkalender: https://www.rki.de/DE/Themen/Infektionskrankheiten/Impfen/Impfkalender/impfkalender-node.html
-• RKI – Empfehlungen der STIKO: https://www.rki.de/DE/Themen/Infektionskrankheiten/Impfen/Staendige-Impfkommission/Empfehlungen-der-STIKO/empfehlungen-der-stiko-node.html
+• RKI – Impfkalender: https://www.rki.de/impfkalender
+• RKI – Ständige Impfkommission (STIKO): https://www.rki.de/stiko
 • Auswärtiges Amt – Reisen und Gesundheit: https://www.auswaertiges-amt.de/de/ReiseUndSicherheit/reise-gesundheit
 
 ALLE IMPFUNGEN IM BLICK
