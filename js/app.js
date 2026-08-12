@@ -892,6 +892,310 @@
     el("#info-dialog").showModal();
   }
 
+  /* -------------------------------------------- Impfpass-Import (Foto) */
+
+  /* Ablauf: Die Nutzerin lässt ihre Fotos außerhalb der App von einem
+     KI-Dienst auslesen und fügt das Ergebnis hier ein. Die App wertet nur
+     Text aus — es verlässt nichts das Gerät.
+
+     Grundsatz der Auswertung: Der gedruckte Handelsname auf der Vignette
+     bestimmt, wogegen geimpft wurde. Die handschriftlichen Kreuze sind nur
+     die Gegenprobe. Wo beides auseinandergeht, wird nachgefragt. */
+
+  const IMPORT_PROMPT = `Du liest Fotos eines deutschen Impfpasses (gelbes WHO-Heft) aus.
+
+Gib AUSSCHLIESSLICH ein JSON-Objekt zurück, ohne Erklärung davor oder danach:
+
+{
+  "format": "impfbuch-import",
+  "version": 1,
+  "zeilen": [
+    {
+      "seite": "6",
+      "seitentyp": "kinder",
+      "datum": "2014-07-22",
+      "datumRoh": "22.7.2014",
+      "sicherheit": "hoch",
+      "impfstoffe": [
+        { "handelsname": "Infanrix hexa", "charge": "A21CC087A" },
+        { "handelsname": "Prevenar 13", "charge": "H96560" }
+      ],
+      "angekreuzt": ["Tetanus", "Diphtherie", "Pertussis", "Poliomyelitis", "Hib", "Hepatitis B", "Pneumokokken"],
+      "impfungGegenText": null,
+      "arzt": "Dr. Norbert Skrzipczyk, Bad Driburg",
+      "anmerkung": null
+    }
+  ]
+}
+
+REGELN
+
+1. Eine Zeile im Pass = ein Objekt in "zeilen". Auch wenn dort mehrere
+   Impfstoff-Vignetten kleben.
+
+2. "seitentyp":
+   - "kinder" für Seiten mit Ankreuz-Spalten (Überschrift "Impfungen für
+     Säuglinge und Kinder"). Die Spalten laufen über beide Seiten des
+     aufgeschlagenen Hefts weiter — ordne Kreuze anhand der Zeilenhöhe zu.
+   - "reise" für Seiten "Indikations- und Reiseimpfungen". Dort steht die
+     Krankheit handschriftlich in der Spalte "Impfung gegen" -> in
+     "impfungGegenText" übernehmen, "angekreuzt" bleibt leer.
+   - "sonstige" für alles andere.
+
+3. DATUM: "datum" im Format JJJJ-MM-TT, "datumRoh" genau so, wie es im Pass
+   steht. Deutsche Schreibweise ist Tag.Monat.Jahr. Daten stehen oft
+   zweizeilig in einer Zelle ("9.3." über "2017") — das ist EIN Datum.
+   Kannst du es nicht sicher lesen: "datum": null setzen und in "anmerkung"
+   beschreiben, was du siehst.
+
+4. VERWECHSLUNGSGEFAHR: Auf den Vignetten steht ein Verfallsdatum
+   ("Verw. bis 12 2015", "Verwendbar bis 03 2018"). Das ist NICHT das
+   Impfdatum. Übernimm es nirgends.
+
+5. IMPFSTOFFE: Handelsname und Chargennummer nur von der gedruckten
+   Vignette. "Ch.-B." bezeichnet die Charge. Zahlen wie "PAA012842" sind
+   Pharmazentralnummern, keine Charge — weglassen. Ist keine Vignette
+   vorhanden, "impfstoffe": [].
+
+6. ANGEKREUZT: Nur Spalten, in denen wirklich ein Kreuz steht. Nutze die
+   Spaltenüberschrift wörtlich. Achtung: Auf leeren Seiten schimmert die
+   Rückseite durch — blasse, spiegelverkehrte Zeichen sind KEINE Kreuze.
+
+7. SICHERHEIT je Zeile: "hoch", "mittel" oder "niedrig". Nimm "niedrig",
+   sobald Datum oder Zuordnung unklar sind.
+
+8. RATE NIE. Lieber null und eine Anmerkung als ein erfundener Wert.
+   Erfinde keine Zeilen; leere Zeilen des Passes werden nicht aufgeführt.
+
+9. Namen, Geburtsdatum und Anschrift des Deckblatts NICHT übernehmen.`;
+
+  let importVorschlaege = [];   // je Impfung ein Block
+  let importIndex = 0;
+  let importUebernommen = 0;
+
+  function openPassImport() {
+    el("#pi-input").value = "";
+    el("#pi-msg").textContent = "";
+    el("#pass-import-dialog").showModal();
+  }
+
+  // Datum aus dem Import prüfen: nur plausible Werte übernehmen.
+  function importDatum(zeile) {
+    const d = parseDate(zeile.datum);
+    if (!d) return null;
+    const jahr = d.getFullYear();
+    if (jahr < 1930 || d > new Date()) return null;
+    return zeile.datum;
+  }
+
+  /* Baut aus den gelesenen Zeilen Vorschläge, gruppiert nach Impfung.
+     Rückgabe je Impfung: { vacId, eintraege: [{datum, produkt, charge,
+     quelle, konflikt}] } */
+  function auswertenImport(daten) {
+    const proTyp = new Map();
+    const warnungen = [];
+
+    (daten.zeilen || []).forEach((z, i) => {
+      const nr = i + 1;
+      const datum = importDatum(z);
+      if (!datum) {
+        warnungen.push(
+          `Zeile ${nr}: Datum unbrauchbar (${z.datumRoh || "keins"})` +
+            (z.anmerkung ? ` — ${z.anmerkung}` : "")
+        );
+        return;
+      }
+
+      // 1) Aus den Handelsnamen ableiten — die verlässlichste Quelle.
+      const ausProdukt = new Map();
+      (z.impfstoffe || []).forEach((p) => {
+        const ziele = STIKO.productTargets(p.handelsname);
+        if (!ziele) {
+          if (p.handelsname)
+            warnungen.push(`Zeile ${nr}: Impfstoff „${p.handelsname}" unbekannt`);
+          return;
+        }
+        ziele.forEach((t) => ausProdukt.set(t, p));
+      });
+
+      // 2) Aus den Kreuzen bzw. dem handschriftlichen Text.
+      const ausKreuz = new Set();
+      (z.angekreuzt || []).forEach((s) => {
+        const t = STIKO.columnTarget(s);
+        if (t) ausKreuz.add(t);
+      });
+      if (z.impfungGegenText) {
+        const t = STIKO.columnTarget(z.impfungGegenText);
+        if (t) ausKreuz.add(t);
+        else warnungen.push(`Zeile ${nr}: „${z.impfungGegenText}" nicht zuordenbar`);
+      }
+
+      // 3) Zusammenführen. Produkt schlägt Kreuz; Abweichung wird vermerkt.
+      const alle = new Set([...ausProdukt.keys(), ...ausKreuz]);
+      alle.forEach((vacId) => {
+        const produkt = ausProdukt.get(vacId);
+        const konflikt =
+          produkt && !ausKreuz.has(vacId)
+            ? "nur aus dem Impfstoff abgeleitet, kein Kreuz erkannt"
+            : !produkt && ausKreuz.has(vacId)
+            ? "nur angekreuzt, kein passender Impfstoff erkannt"
+            : null;
+        if (!proTyp.has(vacId)) proTyp.set(vacId, []);
+        proTyp.get(vacId).push({
+          datum,
+          datumRoh: z.datumRoh || "",
+          produkt: produkt ? produkt.handelsname : "",
+          charge: produkt ? produkt.charge || "" : "",
+          arzt: z.arzt || "",
+          sicherheit: z.sicherheit || "",
+          konflikt,
+          zeile: nr,
+        });
+      });
+    });
+
+    // Reihenfolge wie im Impfpass, damit die Prüfung vertraut wirkt.
+    const sortiert = STIKO_SCHEDULE.filter((v) => proTyp.has(v.id)).map((v) => ({
+      vacId: v.id,
+      name: v.name,
+      eintraege: proTyp.get(v.id).sort((a, b) => a.datum.localeCompare(b.datum)),
+    }));
+    return { vorschlaege: sortiert, warnungen };
+  }
+
+  function startPassImport() {
+    const roh = el("#pi-input").value.trim();
+    const msg = el("#pi-msg");
+    if (!roh) {
+      msg.textContent = "Bitte zuerst die Antwort der KI einfügen.";
+      return;
+    }
+    let daten;
+    try {
+      // Manche Dienste rahmen die Antwort in ```json … ``` ein.
+      const kern = roh.replace(/^[^{]*/, "").replace(/[^}]*$/, "");
+      daten = JSON.parse(kern);
+    } catch (e) {
+      msg.textContent =
+        "Das ließ sich nicht lesen. Erwartet wird der JSON-Text aus dem Anleitungstext — bitte vollständig einfügen.";
+      return;
+    }
+    if (!daten || !Array.isArray(daten.zeilen) || !daten.zeilen.length) {
+      msg.textContent = "Darin waren keine Impfzeilen enthalten.";
+      return;
+    }
+
+    const { vorschlaege, warnungen } = auswertenImport(daten);
+    if (!vorschlaege.length) {
+      msg.textContent =
+        "Es ließ sich keine Impfung zuordnen." +
+        (warnungen.length ? " " + warnungen[0] : "");
+      return;
+    }
+    importVorschlaege = vorschlaege;
+    importIndex = 0;
+    importUebernommen = 0;
+    importWarnungen = warnungen;
+    el("#pass-import-dialog").close();
+    zeigeImportSchritt();
+  }
+
+  let importWarnungen = [];
+
+  function zeigeImportSchritt() {
+    if (importIndex >= importVorschlaege.length) return beendeImport();
+    const block = importVorschlaege[importIndex];
+    el("#pr-title").textContent = `Stimmen diese Einträge zu ${block.name}?`;
+    el("#pr-progress").textContent = `Impfung ${importIndex + 1} von ${
+      importVorschlaege.length
+    }`;
+
+    el("#pr-body").innerHTML = block.eintraege
+      .map(
+        (e, i) => `
+        <div class="pr-row">
+          <label class="pr-take">
+            <input type="checkbox" data-take="${i}" checked />
+            <span>übernehmen</span>
+          </label>
+          <label>Datum
+            <input type="date" data-feld="datum" data-i="${i}" value="${esc(e.datum)}" />
+          </label>
+          <label>Impfstoff
+            <input type="text" data-feld="produkt" data-i="${i}" value="${esc(e.produkt)}" placeholder="Handelsname" />
+          </label>
+          <label>Charge
+            <input type="text" data-feld="charge" data-i="${i}" value="${esc(e.charge)}" />
+          </label>
+          ${
+            e.konflikt
+              ? `<p class="pr-warn">Hinweis: ${esc(e.konflikt)}. Im Pass stand: ${esc(
+                  e.datumRoh || "—"
+                )}</p>`
+              : ""
+          }
+        </div>`
+      )
+      .join("");
+
+    const unsicher = block.eintraege.filter((e) => e.sicherheit === "niedrig").length;
+    el("#pr-note").textContent = unsicher
+      ? `${unsicher} Eintrag/Einträge wurden von der Erkennung selbst als unsicher gemeldet — bitte genau vergleichen.`
+      : "";
+    if (!el("#pass-review-dialog").open) el("#pass-review-dialog").showModal();
+  }
+
+  function uebernehmeImportSchritt(uebernehmen) {
+    const block = importVorschlaege[importIndex];
+    if (uebernehmen) {
+      const dlg = el("#pr-body");
+      const p = activeProfile();
+      block.eintraege.forEach((e, i) => {
+        const an = dlg.querySelector(`[data-take="${i}"]`);
+        if (!an || !an.checked) return;
+        const hole = (feld) =>
+          (dlg.querySelector(`[data-feld="${feld}"][data-i="${i}"]`) || {}).value || "";
+        const datum = hole("datum");
+        if (!datum) return;
+        p.records.push({
+          id: "imp" + Date.now() + "_" + importIndex + "_" + i,
+          date: datum,
+          product: hole("produkt"),
+          batch: hole("charge"),
+          doctor: e.arzt || "",
+          targets: [block.vacId],
+        });
+        importUebernommen++;
+      });
+      saveData();
+    }
+    importIndex++;
+    zeigeImportSchritt();
+  }
+
+  function beendeImport() {
+    el("#pass-review-dialog").close();
+    render();
+    const rest = importWarnungen.length
+      ? `<p>Nicht übernommen wurden ${importWarnungen.length} Angabe(n):</p><ul>` +
+        importWarnungen.slice(0, 8).map((w) => `<li>${esc(w)}</li>`).join("") +
+        `</ul><p class="hint">Diese Einträge kannst du von Hand ergänzen.</p>`
+      : "";
+    showMessage(
+      "Import abgeschlossen",
+      `<p><strong>${importUebernommen}</strong> Impfung(en) wurden eingetragen.</p>${rest}`
+    );
+    importVorschlaege = [];
+    importWarnungen = [];
+  }
+
+  function abbrechenImport() {
+    el("#pass-review-dialog").close();
+    importVorschlaege = [];
+    importWarnungen = [];
+    render();
+  }
+
   /* ------------------------------------------------------- Starthilfe */
 
   /* Sprechblase unter dem Schnelleintrag. Sie erscheint nach der Einleitung
@@ -2822,6 +3126,8 @@
     "confirm-dialog": "#confirm-cancel",
     "notify-dialog": "#notify-cancel",
     "book-dialog": "#book-cancel",
+    "pass-import-dialog": "#pi-cancel",
+    "pass-review-dialog": "#pr-abort",
   };
   let lastBackPress = 0;
 
@@ -2959,6 +3265,24 @@
     });
     alle(".btn-backup", "click", openBackup);
     setupVaccineSearch();
+    el("#btn-pass-import").addEventListener("click", openPassImport);
+    el("#pi-cancel").addEventListener("click", () => el("#pass-import-dialog").close());
+    el("#pi-go").addEventListener("click", startPassImport);
+    el("#pi-copy-prompt").addEventListener("click", async (ev) => {
+      try {
+        await navigator.clipboard.writeText(IMPORT_PROMPT);
+        showToast("Anleitungstext kopiert");
+      } catch (e) {
+        // Ohne Zwischenablage-Rechte: Text zum Abschreiben anzeigen.
+        el("#pi-input").value = IMPORT_PROMPT;
+        el("#pi-msg").textContent =
+          "Kopieren war nicht möglich — der Text steht jetzt im Feld unten. Bitte herausnehmen und danach die Antwort einfügen.";
+      }
+      ev.preventDefault();
+    });
+    el("#pr-take").addEventListener("click", () => uebernehmeImportSchritt(true));
+    el("#pr-skip").addEventListener("click", () => uebernehmeImportSchritt(false));
+    el("#pr-abort").addEventListener("click", abbrechenImport);
     el("#book-save").addEventListener("click", saveBookDialog);
     el("#book-cancel").addEventListener("click", () => el("#book-dialog").close());
     el("#backup-go").addEventListener("click", doBackup);

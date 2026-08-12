@@ -230,6 +230,20 @@
           </p>
         </div>
 
+        <h2 class="panel-title">Impfpass importieren</h2>
+        <div class="form-card">
+          <button class="btn" id="btn-pass-import">
+            <span class="ic" data-icon="download"></span> Impfpass importieren
+          </button>
+          <p class="hint">
+            Übernimm die Einträge aus deinem gelben Impfpass, ohne alles
+            abzutippen. Du fotografierst die Seiten selbst und lässt sie von
+            einem KI-Dienst deiner Wahl auslesen — die App zeigt dir dann jede
+            Impfung einzeln zur Bestätigung. Die Fotos verlassen dabei nicht
+            über diese App dein Gerät.
+          </p>
+        </div>
+
         <h2 class="panel-title">Daten</h2>
         <div class="form-card">
           <p class="hint">
@@ -413,6 +427,50 @@
         </div>
       </section>
     </main>
+
+    <!-- Dialog: Impfpass importieren (Schritt 1 — Text einfügen) -->
+    <dialog id="pass-import-dialog">
+      <form method="dialog">
+        <h3>Impfpass importieren</h3>
+        <ol class="pi-steps">
+          <li>Fotografiere die Innenseiten deines Impfpasses.</li>
+          <li>
+            Gib die Fotos einem KI-Dienst deiner Wahl zusammen mit dem
+            Anleitungstext, den du hier kopieren kannst.
+          </li>
+          <li>Füge die Antwort unten ein.</li>
+        </ol>
+        <button type="button" class="btn" id="pi-copy-prompt">
+          <span class="ic" data-icon="upload"></span> Anleitungstext kopieren
+        </button>
+        <label>
+          Antwort der KI einfügen
+          <textarea id="pi-input" rows="7" placeholder="Hier den Text einfügen …"></textarea>
+        </label>
+        <p class="hint" id="pi-msg"></p>
+        <div class="dlg-actions">
+          <button type="button" class="btn" id="pi-cancel">Abbrechen</button>
+          <button type="button" class="btn btn-primary" id="pi-go">Auswerten</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Dialog: Impfpass importieren (Schritt 2 — je Impfung bestätigen) -->
+    <dialog id="pass-review-dialog">
+      <form method="dialog">
+        <h3 id="pr-title">Impfung prüfen</h3>
+        <p class="hint" id="pr-progress"></p>
+        <div id="pr-body"></div>
+        <p class="hint" id="pr-note"></p>
+        <div class="dlg-actions">
+          <button type="button" class="btn" id="pr-skip">Überspringen</button>
+          <button type="button" class="btn btn-primary" id="pr-take">Übernehmen</button>
+        </div>
+        <div class="dlg-actions">
+          <button type="button" class="btn btn-danger" id="pr-abort">Import abbrechen</button>
+        </div>
+      </form>
+    </dialog>
 
     <!-- Dialog: Impfbuch anpassen -->
     <dialog id="book-dialog">

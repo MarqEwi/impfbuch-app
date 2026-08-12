@@ -1878,6 +1878,49 @@ dialog#quick-dialog::backdrop {
   color: #fffdf4;
 }
 
+/* Impfpass-Import: Anleitung und Prüfschritte */
+.pi-steps {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+#pi-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, "Consolas", monospace;
+  font-size: 0.78rem;
+}
+.pr-row {
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.pr-row label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+}
+.pr-row label:last-child {
+  margin-bottom: 0;
+}
+.pr-take {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+.pr-take input {
+  width: auto;
+}
+.pr-warn {
+  margin: 6px 0 0;
+  font-size: 0.76rem;
+  color: #8a5a08;
+}
+
 /* Suchfeld über dem Impfpass */
 .vac-search {
   margin: 10px 0 14px;

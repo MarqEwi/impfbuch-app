@@ -1053,7 +1053,192 @@ function vaccineNameById(id) {
 }
 
 // Für Import in app.js (klassische Skript-Einbindung ohne Module).
+/* ------------------------------------------------ Handelsnamen → Impfungen
+ *
+ * Für den Import aus einem fotografierten Impfpass. Die Vignetten im Pass
+ * sind gedruckt und damit weit verlässlicher als die handschriftlichen
+ * Kreuze — der Handelsname legt eindeutig fest, wogegen geimpft wurde.
+ * Die erkannten Kreuze dienen nur der Gegenprobe.
+ *
+ * Schlüssel sind kleingeschrieben und ohne Sonderzeichen; der Abgleich
+ * läuft über normalisierten Text, damit „Infanrix hexa", „INFANRIX-HEXA"
+ * und „infanrixhexa" gleich behandelt werden.
+ */
+const PRODUCTS = {
+  // Kombinationen für Säuglinge und Kinder
+  "infanrix hexa": ["tetanus", "diphtherie", "pertussis", "poliomyelitis", "hib", "hepatitis_b"],
+  hexyon: ["tetanus", "diphtherie", "pertussis", "poliomyelitis", "hib", "hepatitis_b"],
+  vaxelis: ["tetanus", "diphtherie", "pertussis", "poliomyelitis", "hib", "hepatitis_b"],
+  "infanrix ipv hib": ["tetanus", "diphtherie", "pertussis", "poliomyelitis", "hib"],
+  pentavac: ["tetanus", "diphtherie", "pertussis", "poliomyelitis", "hib"],
+  "infanrix ipv": ["tetanus", "diphtherie", "pertussis", "poliomyelitis"],
+  tetravac: ["tetanus", "diphtherie", "pertussis", "poliomyelitis"],
+
+  // Auffrischungen für Jugendliche und Erwachsene
+  "boostrix polio": ["tetanus", "diphtherie", "pertussis", "poliomyelitis"],
+  repevax: ["tetanus", "diphtherie", "pertussis", "poliomyelitis"],
+  covaxis: ["tetanus", "diphtherie", "pertussis"],
+  boostrix: ["tetanus", "diphtherie", "pertussis"],
+  "td pur": ["tetanus", "diphtherie"],
+  "td rix": ["tetanus", "diphtherie"],
+  "td impfstoff": ["tetanus", "diphtherie"],
+  "tetanol pur": ["tetanus"],
+  tetanol: ["tetanus"],
+  "ipv merieux": ["poliomyelitis"],
+  imovax: ["poliomyelitis"],
+
+  // Masern, Mumps, Röteln, Windpocken
+  "priorix tetra": ["mmr", "varizellen"],
+  proquad: ["mmr", "varizellen"],
+  priorix: ["mmr"],
+  "m m rvaxpro": ["mmr"],
+  mmrvaxpro: ["mmr"],
+  varilrix: ["varizellen"],
+  varivax: ["varizellen"],
+
+  // Pneumokokken (Kinder bzw. ab 60 — im Zweifel korrigierbar)
+  "prevenar 13": ["pneumokokken_kind"],
+  prevenar: ["pneumokokken_kind"],
+  synflorix: ["pneumokokken_kind"],
+  "prevenar 20": ["pneumokokken_senior"],
+  apexxnar: ["pneumokokken_senior"],
+  pneumovax: ["pneumokokken_senior"],
+
+  // Meningokokken
+  menjugate: ["meningokokken_c"],
+  neisvac: ["meningokokken_c"],
+  meningitec: ["meningokokken_c"],
+  bexsero: ["meningokokken_b"],
+  trumenba: ["meningokokken_b"],
+  nimenrix: ["meningokokken_acwy"],
+  menveo: ["meningokokken_acwy"],
+  menquadfi: ["meningokokken_acwy"],
+
+  // Hepatitis
+  "engerix b": ["hepatitis_b"],
+  engerix: ["hepatitis_b"],
+  hbvaxpro: ["hepatitis_b"],
+  fendrix: ["hepatitis_b"],
+  havrix: ["hepatitis_a"],
+  vaqta: ["hepatitis_a"],
+  twinrix: ["hepatitis_a", "hepatitis_b"],
+
+  // Rotaviren, Hib, HPV
+  rotarix: ["rotaviren"],
+  rotateq: ["rotaviren"],
+  "act hib": ["hib"],
+  hiberix: ["hib"],
+  "gardasil 9": ["hpv"],
+  gardasil: ["hpv"],
+  cervarix: ["hpv"],
+
+  // Reise- und Indikationsimpfungen
+  "fsme immun": ["fsme"],
+  encepur: ["fsme"],
+  stamaril: ["gelbfieber"],
+  "typhim vi": ["typhus"],
+  typherix: ["typhus"],
+  vivotif: ["typhus"],
+  rabipur: ["tollwut"],
+  verorab: ["tollwut"],
+  "tollwut impfstoff": ["tollwut"],
+  ixiaro: ["japanische_enzephalitis"],
+  dukoral: ["cholera"],
+
+  // Jährliche und Alters-Impfungen
+  influsplit: ["influenza"],
+  vaxigrip: ["influenza"],
+  fluarix: ["influenza"],
+  influvac: ["influenza"],
+  efluelda: ["influenza"],
+  comirnaty: ["covid"],
+  spikevax: ["covid"],
+  nuvaxovid: ["covid"],
+  shingrix: ["herpes_zoster"],
+  zostavax: ["herpes_zoster"],
+  beyfortus: ["rsv_saeugling"],
+  synagis: ["rsv_saeugling"],
+  arexvy: ["rsv_senior"],
+  abrysvo: ["rsv_senior"],
+};
+
+/* Spaltenüberschriften der Kinder-Seiten → Impfungs-IDs. Damit lassen sich
+   die angekreuzten Spalten gegen den Handelsnamen prüfen. */
+const COLUMN_LABELS = {
+  tetanus: "tetanus",
+  diphtherie: "diphtherie",
+  pertussis: "pertussis",
+  poliomyelitis: "poliomyelitis",
+  polio: "poliomyelitis",
+  hib: "hib",
+  "haemophilus influenzae b": "hib",
+  "hepatitis b": "hepatitis_b",
+  "masern mumps roeteln": "mmr",
+  "masern mumps roeteln mmr": "mmr",
+  mmr: "mmr",
+  varizellen: "varizellen",
+  windpocken: "varizellen",
+  meningokokken: "meningokokken_c",
+  pneumokokken: "pneumokokken_kind",
+  rotavirus: "rotaviren",
+  rotaviren: "rotaviren",
+  influenza: "influenza",
+  fsme: "fsme",
+  "hepatitis a": "hepatitis_a",
+  hpv: "hpv",
+  "humane papillomviren": "hpv",
+  tollwut: "tollwut",
+  typhus: "typhus",
+  cholera: "cholera",
+  gelbfieber: "gelbfieber",
+  "japanische enzephalitis": "japanische_enzephalitis",
+  zoster: "herpes_zoster",
+  "herpes zoster": "herpes_zoster",
+  covid: "covid",
+  "covid 19": "covid",
+};
+
+// Vereinheitlicht Schreibweisen für den Abgleich: klein, ohne Sonderzeichen.
+function normalizeName(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/* Sucht zu einem Handelsnamen die Impfungen. Zuerst exakt, dann als
+   Wortanfang — „Infanrix hexa 0,5 ml" findet so „infanrix hexa". */
+function productTargets(handelsname) {
+  const n = normalizeName(handelsname);
+  if (!n) return null;
+  if (PRODUCTS[n]) return PRODUCTS[n].slice();
+  const treffer = Object.keys(PRODUCTS)
+    .filter((k) => n.startsWith(k) || n.includes(k))
+    .sort((a, b) => b.length - a.length)[0];
+  return treffer ? PRODUCTS[treffer].slice() : null;
+}
+
+/* Spaltenbeschriftung aus dem Pass → Impfungs-ID. Auch als Teiltreffer,
+   damit „Hib (Haemophilus influenzae b)" oder „Masern, Mumps, Röteln (MMR)"
+   erkannt werden. Der längste Treffer gewinnt, sonst würde „hepatitis b"
+   von „hib" verdrängt. */
+function columnTarget(label) {
+  const n = normalizeName(label);
+  if (!n) return null;
+  if (COLUMN_LABELS[n]) return COLUMN_LABELS[n];
+  if (STIKO_SCHEDULE.some((v) => v.id === n)) return n;
+  const treffer = Object.keys(COLUMN_LABELS)
+    .filter((k) => new RegExp("(^| )" + k + "($| )").test(n))
+    .sort((a, b) => b.length - a.length)[0];
+  return treffer ? COLUMN_LABELS[treffer] : null;
+}
+
 window.STIKO = {
+  PRODUCTS,
+  productTargets,
+  columnTarget,
+  normalizeName,
   GROUPS,
   STIKO_SCHEDULE,
   COMBINATIONS,
