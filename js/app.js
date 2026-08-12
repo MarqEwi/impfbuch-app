@@ -967,7 +967,13 @@ REGELN
 8. RATE NIE. Lieber null und eine Anmerkung als ein erfundener Wert.
    Erfinde keine Zeilen; leere Zeilen des Passes werden nicht aufgeführt.
 
-9. Namen, Geburtsdatum und Anschrift des Deckblatts NICHT übernehmen.`;
+9. MEHRERE PÄSSE / ÜBERTRAG: Bekommst du Fotos aus mehreren Impfausweisen
+   oder einen Übertrag, führe ALLE Zeilen auf — auch wenn derselbe Eintrag
+   doppelt vorkommt. Die App erkennt Doppelte am gleichen Datum selbst.
+   Bei Übertrags-Einträgen zählt das ursprüngliche Impfdatum, nicht der
+   Tag des Übertrags.
+
+10. Namen, Geburtsdatum und Anschrift des Deckblatts NICHT übernehmen.`;
 
   let importVorschlaege = [];   // je Impfung ein Block
   let importIndex = 0;
@@ -1055,11 +1061,21 @@ REGELN
     });
 
     // Reihenfolge wie im Impfpass, damit die Prüfung vertraut wirkt.
-    const sortiert = STIKO_SCHEDULE.filter((v) => proTyp.has(v.id)).map((v) => ({
-      vacId: v.id,
-      name: v.name,
-      eintraege: proTyp.get(v.id).sort((a, b) => a.datum.localeCompare(b.datum)),
-    }));
+    const sortiert = STIKO_SCHEDULE.filter((v) => proTyp.has(v.id)).map((v) => {
+      /* Gleiche Impfung am gleichen Tag nur einmal anbieten — bei einem
+         Übertrag steht derselbe Eintrag im alten und im neuen Pass. Der
+         Eintrag mit Impfstoffangabe gewinnt. */
+      const jeTag = new Map();
+      proTyp.get(v.id).forEach((e) => {
+        const alt = jeTag.get(e.datum);
+        if (!alt || (!alt.produkt && e.produkt)) jeTag.set(e.datum, e);
+      });
+      return {
+        vacId: v.id,
+        name: v.name,
+        eintraege: [...jeTag.values()].sort((a, b) => a.datum.localeCompare(b.datum)),
+      };
+    });
     return { vorschlaege: sortiert, warnungen };
   }
 
@@ -1096,47 +1112,97 @@ REGELN
     importIndex = 0;
     importUebernommen = 0;
     importWarnungen = warnungen;
+    importDatumKorrekturen = {};
     el("#pass-import-dialog").close();
     zeigeImportSchritt();
   }
 
   let importWarnungen = [];
+  /* Korrigierte Termine: Original-Datum → { datum, quelle }. Wer bei
+     Tetanus „22.7." auf „23.7." berichtigt und das Häkchen setzt, muss
+     dieselbe Korrektur nicht bei fünf weiteren Impfungen wiederholen —
+     eine Passzeile ist EIN Termin. */
+  let importDatumKorrekturen = {};
 
   function zeigeImportSchritt() {
     if (importIndex >= importVorschlaege.length) return beendeImport();
     const block = importVorschlaege[importIndex];
+    const vorhandene = recordsFor(activeProfile(), block.vacId).map((r) => r.date);
+
     el("#pr-title").textContent = `Stimmen diese Einträge zu ${block.name}?`;
     el("#pr-progress").textContent = `Impfung ${importIndex + 1} von ${
       importVorschlaege.length
     }`;
 
     el("#pr-body").innerHTML = block.eintraege
-      .map(
-        (e, i) => `
-        <div class="pr-row">
-          <label class="pr-take">
-            <input type="checkbox" data-take="${i}" checked />
-            <span>übernehmen</span>
+      .map((e, i) => {
+        const korrektur = importDatumKorrekturen[e.datum];
+        const datum = korrektur ? korrektur.datum : e.datum;
+        /* Schon eingetragen? Dann kommt der Eintrag aus einem zweiten Pass
+           oder einem früheren Import — abgewählt anbieten statt doppeln. */
+        const doppelt = vorhandene.includes(datum);
+
+        const notizen = [];
+        if (korrektur)
+          notizen.push(
+            `<p class="pr-sync-note">Datum übernommen aus ${esc(korrektur.quelle)}.</p>`
+          );
+        if (doppelt)
+          notizen.push(
+            `<p class="pr-dup-note">Bereits im Impfpass vorhanden — z. B. aus einem zweiten Impfausweis oder Übertrag. Bleibt abgewählt.</p>`
+          );
+        if (e.konflikt)
+          notizen.push(
+            `<p class="pr-warn">${esc(e.konflikt)} — im Pass stand: ${esc(
+              e.datumRoh || "—"
+            )}</p>`
+          );
+
+        return `
+        <div class="pr-row${doppelt ? " pr-doppelt" : ""}">
+          <div class="pr-row-head">
+            <label class="pr-take">
+              <input type="checkbox" data-take="${i}" ${doppelt ? "" : "checked"} />
+              <span>übernehmen</span>
+            </label>
+            <span class="pr-quelle">${esc(e.datumRoh || "")}</span>
+          </div>
+          <div class="pr-fields">
+            <label><span class="pr-label">Datum</span>
+              <input type="date" data-feld="datum" data-i="${i}" value="${esc(datum)}" />
+            </label>
+            <label><span class="pr-label">Impfstoff</span>
+              <input type="text" data-feld="produkt" data-i="${i}" value="${esc(e.produkt)}" placeholder="Handelsname" />
+            </label>
+            <label><span class="pr-label">Charge</span>
+              <input type="text" data-feld="charge" data-i="${i}" value="${esc(e.charge)}" />
+            </label>
+          </div>
+          <label class="pr-sync">
+            <input type="checkbox" data-sync="${i}" checked />
+            <span>Geändertes Datum auch für die anderen Impfungen dieses Tages übernehmen</span>
           </label>
-          <label>Datum
-            <input type="date" data-feld="datum" data-i="${i}" value="${esc(e.datum)}" />
-          </label>
-          <label>Impfstoff
-            <input type="text" data-feld="produkt" data-i="${i}" value="${esc(e.produkt)}" placeholder="Handelsname" />
-          </label>
-          <label>Charge
-            <input type="text" data-feld="charge" data-i="${i}" value="${esc(e.charge)}" />
-          </label>
-          ${
-            e.konflikt
-              ? `<p class="pr-warn">Hinweis: ${esc(e.konflikt)}. Im Pass stand: ${esc(
-                  e.datumRoh || "—"
-                )}</p>`
-              : ""
-          }
-        </div>`
-      )
+          ${notizen.join("")}
+        </div>`;
+      })
       .join("");
+
+    /* Das Übernehmen-Häkchen erst zeigen, wenn wirklich am Datum gedreht
+       wurde — vorher ist es nur Rauschen. */
+    el("#pr-body")
+      .querySelectorAll('[data-feld="datum"]')
+      .forEach((feld) => {
+        const i = feld.dataset.i;
+        const orig = feld.value;
+        const sync = el("#pr-body").querySelector(`[data-sync="${i}"]`);
+        if (sync) sync.closest(".pr-sync").classList.add("hidden");
+        feld.addEventListener("input", () => {
+          if (sync)
+            sync
+              .closest(".pr-sync")
+              .classList.toggle("hidden", feld.value === orig);
+        });
+      });
 
     const unsicher = block.eintraege.filter((e) => e.sicherheit === "niedrig").length;
     el("#pr-note").textContent = unsicher
@@ -1151,12 +1217,21 @@ REGELN
       const dlg = el("#pr-body");
       const p = activeProfile();
       block.eintraege.forEach((e, i) => {
-        const an = dlg.querySelector(`[data-take="${i}"]`);
-        if (!an || !an.checked) return;
         const hole = (feld) =>
           (dlg.querySelector(`[data-feld="${feld}"][data-i="${i}"]`) || {}).value || "";
         const datum = hole("datum");
-        if (!datum) return;
+
+        /* Datums-Korrektur merken — unabhängig davon, ob die Zeile selbst
+           übernommen wird. Schlüssel ist das Original aus dem Pass. */
+        const sync = dlg.querySelector(`[data-sync="${i}"]`);
+        if (datum && datum !== e.datum && sync && sync.checked) {
+          importDatumKorrekturen[e.datum] = { datum, quelle: block.name };
+        }
+
+        const an = dlg.querySelector(`[data-take="${i}"]`);
+        if (!an || !an.checked || !datum) return;
+        // Sicherheitsnetz gegen Dubletten, falls das Datum geändert wurde.
+        if (recordsFor(p, block.vacId).some((r) => r.date === datum)) return;
         p.records.push({
           id: "imp" + Date.now() + "_" + importIndex + "_" + i,
           date: datum,

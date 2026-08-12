@@ -1878,45 +1878,176 @@ dialog#quick-dialog::backdrop {
   color: #fffdf4;
 }
 
-/* Impfpass-Import: Anleitung und Prüfschritte */
+/* Impfpass-Import: Anleitung (Schritt 1) — nummerierte Kreise statt
+   nackter Ordnungszahlen, gleiche Formensprache wie die Impfbuch-Felder. */
 .pi-steps {
-  margin: 0 0 12px;
-  padding-left: 20px;
+  list-style: none;
+  counter-reset: schritt;
+  margin: 0 0 14px;
+  padding: 0;
+}
+.pi-steps li {
+  counter-increment: schritt;
+  position: relative;
+  padding-left: 34px;
+  margin-bottom: 9px;
   font-size: 0.85rem;
   line-height: 1.5;
   color: var(--ink-soft);
+}
+.pi-steps li::before {
+  content: counter(schritt);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--group-color, #c8901f);
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(45, 35, 0, 0.3);
+}
+#pi-copy-prompt {
+  margin-bottom: 12px;
 }
 #pi-input {
   width: 100%;
   box-sizing: border-box;
   font-family: ui-monospace, "Consolas", monospace;
   font-size: 0.78rem;
+  border: 1px solid var(--btn-border);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--input-bg, var(--paper));
+  color: var(--ink);
+}
+#pi-input:focus {
+  outline: none;
+  border-color: #c8901f;
+  box-shadow: 0 0 0 2px rgba(200, 144, 31, 0.25);
+}
+
+/* Prüfschritt (Schritt 2): eine Karte je Eintrag. Kopfzeile mit
+   Übernehmen-Schalter und dem Roh-Datum aus dem Pass als Beleg, darunter
+   die Felder im Raster wie beim Impfbuch. */
+#pr-progress {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 3px 12px;
+  border-radius: 12px;
+  background: rgba(200, 144, 31, 0.16);
+  border: 1px solid rgba(200, 144, 31, 0.45);
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 .pr-row {
   border: 1px solid var(--btn-border);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  background: var(--paper);
+  box-shadow: 0 2px 6px rgba(45, 35, 0, 0.1);
+}
+.pr-row.pr-doppelt {
+  opacity: 0.75;
+  border-style: dashed;
+}
+.pr-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 10px;
-}
-.pr-row label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 0.78rem;
-}
-.pr-row label:last-child {
-  margin-bottom: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
 }
 .pr-take {
-  display: flex !important;
+  display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 0.82rem;
   font-weight: 700;
+  cursor: pointer;
 }
 .pr-take input {
-  width: auto;
+  width: 18px;
+  height: 18px;
+  accent-color: #c8901f;
+}
+.pr-quelle {
+  font-size: 0.74rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.pr-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+}
+.pr-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  min-width: 0;
+}
+.pr-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.pr-fields input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 9px;
+  font: inherit;
+  font-size: 0.86rem;
+  color: var(--ink);
+  background: var(--input-bg, var(--paper));
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
+}
+.pr-fields input:focus {
+  outline: none;
+  border-color: #c8901f;
+  box-shadow: 0 0 0 2px rgba(200, 144, 31, 0.25);
+}
+.pr-sync {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.pr-sync input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  accent-color: #c8901f;
+}
+.pr-sync-note {
+  margin: 8px 0 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--stamp-blue, #3a5a8c);
+}
+.pr-dup-note {
+  margin: 8px 0 0;
+  font-size: 0.76rem;
+  color: var(--ink-soft);
 }
 .pr-warn {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   font-size: 0.76rem;
   color: #8a5a08;
 }
