@@ -952,14 +952,32 @@ REGELN
    ("Verw. bis 12 2015", "Verwendbar bis 03 2018"). Das ist NICHT das
    Impfdatum. Übernimm es nirgends.
 
-5. IMPFSTOFFE: Handelsname und Chargennummer nur von der gedruckten
-   Vignette. "Ch.-B." bezeichnet die Charge. Zahlen wie "PAA012842" sind
-   Pharmazentralnummern, keine Charge — weglassen. Ist keine Vignette
-   vorhanden, "impfstoffe": [].
+5. IMPFSTOFFE: Handelsname und Chargennummer von der gedruckten Vignette
+   ODER aus der Spalte "Handelsname und Chargennummer" — dort stehen sie
+   oft handschriftlich (z. B. "FSME-Immun I / Ch.-B.: VNR1M06F"). "Ch.-B."
+   bezeichnet die Charge. Zahlen wie "PAA012842" sind Pharmazentralnummern,
+   keine Charge — weglassen. Ist nichts angegeben, "impfstoffe": [].
 
 6. ANGEKREUZT: Nur Spalten, in denen wirklich ein Kreuz steht. Nutze die
    Spaltenüberschrift wörtlich. Achtung: Auf leeren Seiten schimmert die
    Rückseite durch — blasse, spiegelverkehrte Zeichen sind KEINE Kreuze.
+   Mit einem durchgestrichenen Kreis (Zeichen für "entwertet") markierte
+   Felder sind ebenfalls KEINE Kreuze. Der Text in "impfungGegenText" darf
+   mehrere Krankheiten nennen ("Typhus (A), MKK (A)") — wörtlich übernehmen.
+
+6a. KEINE IMPFUNGEN sind: Antikörper-/Titerbestimmungen (z. B.
+   "HBs-AK 975 IE"), Tuberkulin-/Tine-Tests und durchgemachte Erkrankungen.
+   Solche Zeilen weglassen. Umgekehrt gilt: Impf-Zeilen zählen auch dann,
+   wenn sie auf einer Test- oder sonstigen Seite nachgetragen wurden —
+   entscheidend ist der Inhalt der Zeile, nicht die Seitenüberschrift.
+
+6b. GELBFIEBER-BESCHEINIGUNGEN (eigene Seite "Yellow Fever" oder
+   "Internationale Bescheinigung über Impfung"): seitentyp "reise",
+   impfungGegenText "Gelbfieber" — auch wenn die Krankheit dort nicht
+   ausgeschrieben steht; die Impfstoffangabe (z. B. Stamaril) genügt.
+
+6c. Steht nur eine Jahreszahl ("98") statt eines Datums: "datum": null,
+   Jahreszahl in "datumRoh", Anmerkung dazu.
 
 7. SICHERHEIT je Zeile: "hoch", "mittel" oder "niedrig". Nimm "niedrig",
    sobald Datum oder Zuordnung unklar sind.
@@ -971,7 +989,7 @@ REGELN
    oder einen Übertrag, führe ALLE Zeilen auf — auch wenn derselbe Eintrag
    doppelt vorkommt. Die App erkennt Doppelte am gleichen Datum selbst.
    Bei Übertrags-Einträgen zählt das ursprüngliche Impfdatum, nicht der
-   Tag des Übertrags.
+   Tag des Übertrags. Markiere Übertrags-Zeilen mit "anmerkung": "Übertrag".
 
 10. Namen, Geburtsdatum und Anschrift des Deckblatts NICHT übernehmen.`;
 
@@ -1027,15 +1045,37 @@ REGELN
 
       // 2) Aus den Kreuzen bzw. dem handschriftlichen Text.
       const ausKreuz = new Set();
-      (z.angekreuzt || []).forEach((s) => {
-        const t = STIKO.columnTarget(s);
-        if (t) ausKreuz.add(t);
-      });
+      (z.angekreuzt || []).forEach((s) =>
+        STIKO.textTargets(s).forEach((t) => ausKreuz.add(t))
+      );
       if (z.impfungGegenText) {
-        const t = STIKO.columnTarget(z.impfungGegenText);
-        if (t) ausKreuz.add(t);
+        const t = STIKO.textTargets(z.impfungGegenText);
+        if (t.length) t.forEach((x) => ausKreuz.add(x));
         else warnungen.push(`Zeile ${nr}: „${z.impfungGegenText}" nicht zuordenbar`);
       }
+
+      /* Einzeln angekreuzte Masern-, Mumps- und Röteln-Spalten in EINER
+         Zeile sind die MMR-Kombi — alte Pässe führen drei Spalten. */
+      const MMR_TEILE = ["masern_einzeln", "mumps_einzeln", "roeteln_einzeln"];
+      if (MMR_TEILE.every((t) => ausKreuz.has(t))) {
+        MMR_TEILE.forEach((t) => ausKreuz.delete(t));
+        ausKreuz.add("mmr");
+      }
+
+      /* Vignette schlägt Handschrift innerhalb derselben Familie: Klebt
+         Menveo (ACWY) in der Zeile und daneben steht nur „Meningokokken",
+         ist das dieselbe Spritze — kein zweiter Eintrag. */
+      const produktFamilien = new Set(
+        [...ausProdukt.keys()].map((t) => STIKO.FAMILIE[t]).filter(Boolean)
+      );
+      [...ausKreuz].forEach((t) => {
+        if (
+          !ausProdukt.has(t) &&
+          STIKO.FAMILIE[t] &&
+          produktFamilien.has(STIKO.FAMILIE[t])
+        )
+          ausKreuz.delete(t);
+      });
 
       // 3) Zusammenführen. Produkt schlägt Kreuz; Abweichung wird vermerkt.
       const alle = new Set([...ausProdukt.keys(), ...ausKreuz]);
@@ -1055,10 +1095,42 @@ REGELN
           charge: produkt ? produkt.charge || "" : "",
           arzt: z.arzt || "",
           sicherheit: z.sicherheit || "",
+          anmerkung: z.anmerkung || "",
           konflikt,
           zeile: nr,
         });
       });
+    });
+
+    /* Familien-Bereinigung über Zeilen hinweg: Ein Übertrag nennt oft nur
+       „Meningokokken" (ohne Vignette), das Original hat Menveo (ACWY) —
+       gleicher Tag, dieselbe Spritze. Der produktgestützte Eintrag gewinnt,
+       der unbestimmte wird ihm zugerechnet statt doppelt zu erscheinen. */
+    const familienBelegt = new Map(); // "familie|datum" → vacId mit Produkt
+    proTyp.forEach((eintraege, vacId) => {
+      const fam = STIKO.FAMILIE[vacId];
+      if (!fam) return;
+      eintraege.forEach((e) => {
+        if (e.produkt) familienBelegt.set(fam + "|" + e.datum, vacId);
+      });
+    });
+    [...proTyp.keys()].forEach((vacId) => {
+      const fam = STIKO.FAMILIE[vacId];
+      if (!fam) return;
+      const rest = proTyp.get(vacId).filter((e) => {
+        const sieger = familienBelegt.get(fam + "|" + e.datum);
+        if (sieger && sieger !== vacId && !e.produkt) {
+          warnungen.push(
+            `Zeile ${e.zeile}: „${vaccineNameById(vacId)}" am ${
+              e.datumRoh || e.datum
+            } dem genaueren Eintrag „${vaccineNameById(sieger)}" zugerechnet`
+          );
+          return false;
+        }
+        return true;
+      });
+      if (rest.length) proTyp.set(vacId, rest);
+      else proTyp.delete(vacId);
     });
 
     // Reihenfolge wie im Impfpass, damit die Prüfung vertraut wirkt.
@@ -1137,6 +1209,18 @@ REGELN
     }`;
 
     const bestandAlle = recordsFor(activeProfile(), block.vacId);
+    /* Daten, an denen bereits eine Schwester-Impfung derselben Familie
+       eingetragen ist (Meningokokken C vs. ACWY, MMR vs. Einzelimpfungen) —
+       sehr wahrscheinlich derselbe Termin aus einem anderen Heft. */
+    const familienDaten = new Set();
+    const fam = STIKO.FAMILIE[block.vacId];
+    if (fam) {
+      Object.keys(STIKO.FAMILIE)
+        .filter((id) => STIKO.FAMILIE[id] === fam && id !== block.vacId)
+        .forEach((id) =>
+          recordsFor(activeProfile(), id).forEach((r) => familienDaten.add(r.date))
+        );
+    }
     el("#pr-body").innerHTML = block.eintraege
       .map((e, i) => {
         const korrektur = importDatumKorrekturen[e.datum];
@@ -1152,7 +1236,14 @@ REGELN
           if (e.charge && !bestand.batch) ergaenzungen.push("Charge");
           if (e.arzt && !bestand.doctor) ergaenzungen.push("Ärztin/Arzt");
         }
-        const modus = !bestand ? "neu" : ergaenzungen.length ? "ergaenzen" : "doppelt";
+        const famDoppelt = !bestand && familienDaten.has(datum);
+        const modus = bestand
+          ? ergaenzungen.length
+            ? "ergaenzen"
+            : "doppelt"
+          : famDoppelt
+          ? "doppelt"
+          : "neu";
 
         const notizen = [];
         if (korrektur)
@@ -1167,13 +1258,24 @@ REGELN
           );
         if (modus === "doppelt")
           notizen.push(
-            `<p class="pr-dup-note">Bereits vollständig im Impfpass vorhanden — z. B. aus einem zweiten Impfausweis oder Übertrag. Bleibt abgewählt.</p>`
+            famDoppelt
+              ? `<p class="pr-dup-note">Am selben Tag ist bereits eine verwandte Impfung eingetragen (z. B. Meningokokken ACWY statt „${esc(
+                  block.name
+                )}") — vermutlich derselbe Termin aus einem anderen Heft. Bleibt abgewählt.</p>`
+              : `<p class="pr-dup-note">Bereits vollständig im Impfpass vorhanden — z. B. aus einem zweiten Impfausweis oder Übertrag. Bleibt abgewählt.</p>`
           );
         if (e.konflikt)
           notizen.push(
             `<p class="pr-warn">${esc(e.konflikt)} — im Pass stand: ${esc(
               e.datumRoh || "—"
             )}</p>`
+          );
+        /* Was die Erkennung selbst angemerkt hat („Übertrag", „Datum
+           überschrieben") gehört vor die Augen der Nutzerin — genau hier
+           fällt die Entscheidung, ob der Eintrag stimmt. */
+        if (e.anmerkung)
+          notizen.push(
+            `<p class="pr-anno">Vermerk der Erkennung: ${esc(e.anmerkung)}</p>`
           );
 
         /* Vorhandene Angaben werden angezeigt, aber nicht zum Ändern

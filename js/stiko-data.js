@@ -1144,6 +1144,7 @@ const PRODUCTS = {
   "tollwut impfstoff": ["tollwut"],
   ixiaro: ["japanische_enzephalitis"],
   dukoral: ["cholera"],
+  vaxchora: ["cholera"],
 
   // Jährliche und Alters-Impfungen
   influsplit: ["influenza"],
@@ -1151,6 +1152,9 @@ const PRODUCTS = {
   fluarix: ["influenza"],
   influvac: ["influenza"],
   efluelda: ["influenza"],
+  begripal: ["influenza"],
+  optaflu: ["influenza"],
+  fluad: ["influenza"],
   comirnaty: ["covid"],
   spikevax: ["covid"],
   nuvaxovid: ["covid"],
@@ -1196,13 +1200,86 @@ const COLUMN_LABELS = {
   "herpes zoster": "herpes_zoster",
   covid: "covid",
   "covid 19": "covid",
+  /* Kürzel, wie sie handschriftlich in echten Pässen stehen — vor allem in
+     Bundeswehr-Heften: "JE (A)", "TW II", "MKK", "Mening", "Grippe 17/18". */
+  je: "japanische_enzephalitis",
+  "j e": "japanische_enzephalitis",
+  tw: "tollwut",
+  grippe: "influenza",
+  virusgrippe: "influenza",
+  "sars cov 2": "covid",
+  "sars cov2": "covid",
+  "sars cov": "covid",
+  corona: "covid",
+  "hep b": "hepatitis_b",
+  "hep a": "hepatitis_a",
+  mening: "meningokokken_c",
+  mkk: "meningokokken_c",
+  masern: "masern_einzeln",
+  measles: "masern_einzeln",
+  mumps: "mumps_einzeln",
+  parotitis: "mumps_einzeln",
+  roeteln: "roeteln_einzeln",
+  rubella: "roeteln_einzeln",
+  /* Die WHO-Hefte drucken die Spaltenköpfe dreisprachig — wer wörtlich
+     abschreibt, liefert auch die englische oder französische Fassung. */
+  tetanos: "tetanus",
+  diphtheria: "diphtherie",
+  diphterie: "diphtherie",
+  coqueluche: "pertussis",
+  keuchhusten: "pertussis",
+  "whooping cough": "pertussis",
+  poliomyelite: "poliomyelitis",
+  rougeole: "masern_einzeln",
+  oreillons: "mumps_einzeln",
+  rubeole: "roeteln_einzeln",
+  varicelle: "varizellen",
+  "hepatite b": "hepatitis_b",
+  "hepatite a": "hepatitis_a",
+  rabies: "tollwut",
+  "yellow fever": "gelbfieber",
+  "fievre jaune": "gelbfieber",
+  typhoid: "typhus",
+};
+
+/* Kombi-Kürzel aus der Spalte „Impfung gegen": ein Wort steht für mehrere
+   Impfungen. „TDPP Auffr." heißt Tetanus, Diphtherie, Keuchhusten, Polio. */
+const COMBO_TEXT = {
+  tdpp: ["tetanus", "diphtherie", "pertussis", "poliomyelitis"],
+  tdp: ["tetanus", "diphtherie", "pertussis"],
+  td: ["tetanus", "diphtherie"],
+  dt: ["tetanus", "diphtherie"],
+  "hep a b": ["hepatitis_a", "hepatitis_b"],
+  "hepatitis a b": ["hepatitis_a", "hepatitis_b"],
+};
+
+/* Impfstoff-Familien: Steht auf der Vignette Menveo (ACWY) und daneben
+   handschriftlich nur „Meningokokken", meint beides dieselbe Spritze —
+   der genauere Produkt-Treffer gewinnt, der Text erzeugt keinen zweiten
+   Eintrag. Gleiches gilt für die MMR-Kombi gegenüber den Einzelspalten. */
+const FAMILIE = {
+  meningokokken_b: "meningokokken",
+  meningokokken_c: "meningokokken",
+  meningokokken_acwy: "meningokokken",
+  pneumokokken_kind: "pneumokokken",
+  pneumokokken_senior: "pneumokokken",
+  rsv_saeugling: "rsv",
+  rsv_senior: "rsv",
+  mmr: "mmr",
+  masern_einzeln: "mmr",
+  mumps_einzeln: "mmr",
+  roeteln_einzeln: "mmr",
 };
 
 // Vereinheitlicht Schreibweisen für den Abgleich: klein, ohne Sonderzeichen.
+// Französische Akzente werden abgelegt, damit „Diphtérie" und „Tétanos"
+// aus den dreisprachigen WHO-Spaltenköpfen ihre Schlüssel finden.
 function normalizeName(s) {
   return String(s || "")
     .toLowerCase()
     .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/[éèêë]/g, "e").replace(/[àâ]/g, "a").replace(/[îï]/g, "i")
+    .replace(/[ûù]/g, "u").replace(/ç/g, "c")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 }
@@ -1234,10 +1311,57 @@ function columnTarget(label) {
   return treffer ? COLUMN_LABELS[treffer] : null;
 }
 
+/* Liest ein Freitext-Feld wie „Typhus (A), MKK (A)" oder „TDPP Auffr." und
+   liefert ALLE gemeinten Impfungen. Nummerierungen (I, II, (A)),
+   Gültigkeitsvermerke (VS 2015) und Jahreszahlen werden überlesen; ein Feld
+   kann mehrere Krankheiten nennen. */
+function textTargets(text) {
+  let n = " " + normalizeName(text) + " ";
+  if (!n.trim()) return [];
+  const exakt = COLUMN_LABELS[n.trim()];
+  if (exakt) return [exakt];
+
+  // Füllsel entfernen: Dosis-Nummern, Auffrischungs- und Gültigkeitsvermerke
+  const fueller = / (i{1,3}|iv|vi?|auffr\w*|vs|js|nr|impfung(en)?|booster|\d+([ /]\d+)?) /g;
+  let vorher;
+  do {
+    vorher = n;
+    n = n.replace(fueller, " ");
+  } while (n !== vorher);
+
+  const kern = n.replace(/\s+/g, " ").trim();
+  if (COMBO_TEXT[kern]) return COMBO_TEXT[kern].slice();
+
+  /* Alle bekannten Bezeichnungen im Text einsammeln — längste zuerst, und
+     Gefundenes aus dem Text streichen, damit „Hepatitis B" nicht zusätzlich
+     als „Hep B" zählt. */
+  const out = new Set();
+  let rest = " " + kern + " ";
+  Object.keys(COLUMN_LABELS)
+    .sort((a, b) => b.length - a.length)
+    .forEach((k) => {
+      const re = new RegExp("(^| )" + k + "( |$)");
+      if (re.test(rest)) {
+        rest = rest.replace(re, " ");
+        out.add(COLUMN_LABELS[k]);
+      }
+    });
+  Object.keys(COMBO_TEXT).forEach((k) => {
+    const re = new RegExp("(^| )" + k + "( |$)");
+    if (re.test(rest)) {
+      rest = rest.replace(re, " ");
+      COMBO_TEXT[k].forEach((t) => out.add(t));
+    }
+  });
+  return [...out];
+}
+
 window.STIKO = {
   PRODUCTS,
+  FAMILIE,
   productTargets,
   columnTarget,
+  textTargets,
   normalizeName,
   GROUPS,
   STIKO_SCHEDULE,

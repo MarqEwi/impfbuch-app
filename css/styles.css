@@ -2075,6 +2075,13 @@ dialog#quick-dialog::backdrop {
   font-size: 0.76rem;
   color: #8a5a08;
 }
+/* Original-Anmerkung der Erkennung („Übertrag", „Datum überschrieben") */
+.pr-anno {
+  margin: 8px 0 0;
+  font-size: 0.74rem;
+  font-style: italic;
+  color: var(--ink-soft);
+}
 
 /* Suchfeld über dem Impfpass */
 .vac-search {
