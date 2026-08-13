@@ -1099,9 +1099,14 @@ main {
 /* ---------------------------------------------------------------- Dialog */
 
 /* Alle Dialoge über der Werbeleiste halten und bei Bedarf scrollbar machen,
-   damit die unteren Buttons nie hinter dem Banner verschwinden. */
+   damit die unteren Buttons nie hinter dem Banner verschwinden. Der Dialog
+   ist zentriert; damit sein unterer Rand über Banner UND Systemleiste
+   bleibt, muss deren Summe beidseitig abgezogen werden — der Freiraum
+   verteilt sich je zur Hälfte nach oben und unten. */
 dialog {
-  max-height: calc(100dvh - 2 * var(--ad-height) - 32px);
+  max-height: calc(
+    100dvh - 2 * var(--ad-height) - 2 * env(safe-area-inset-bottom, 0px) - 40px
+  );
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -1694,7 +1699,8 @@ dialog#quick-dialog::backdrop {
 }
 
 .q-checklist {
-  max-height: 46vh;
+  /* dvh statt vh: 100vh überragt auf Android den sichtbaren Bereich */
+  max-height: 40dvh;
   overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1876,6 +1882,14 @@ dialog#quick-dialog::backdrop {
   background: var(--coach-line);
   border-color: var(--coach-line);
   color: #fffdf4;
+}
+
+/* Symbol in Abschnittsüberschriften (z. B. Reagenzglas am BETA-Import) */
+.panel-title .ic-title {
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.16em;
+  margin-right: 4px;
 }
 
 /* Impfpass-Import: Anleitung (Schritt 1) — nummerierte Kreise statt
@@ -2893,8 +2907,13 @@ dialog#quick-dialog::backdrop {
    nicht geladener Anzeige oder offener Tastatur — steht sie auf 0, und die
    Navigationsleiste des Geräts würde die letzten Zeilen verdecken. Deshalb
    mindestens den Geräte-Sicherheitsabstand freihalten. */
+/* Summe statt Maximum: Der echte Android-Banner meldet nur die reine
+   Anzeigenhöhe — die Systemleiste des Geräts liegt zusätzlich darunter.
+   Nur beide zusammen garantieren, dass die letzte Zeile erreichbar ist.
+   (Beim DOM-Platzhalter steckt die Systemleiste schon in --ad-height;
+   das kostet dann ein paar Pixel Luft zu viel — nie zu wenig.) */
 body {
-  padding-bottom: max(var(--ad-height), env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--ad-height) + env(safe-area-inset-bottom, 0px));
 }
 /* Dezente Werbe-/Platzhalterleiste unten */
 .ad-bar {
@@ -2957,7 +2976,7 @@ body.keyboard-open .ad-bar {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(var(--ad-height, 0px) + 24px);
+  bottom: calc(var(--ad-height, 0px) + env(safe-area-inset-bottom, 0px) + 24px);
   z-index: 200;
   background: rgba(30, 27, 18, 0.92);
   color: #fff;

@@ -28,6 +28,11 @@
     x: '<path d="M18 6 6 18M6 6l12 12"/>',
     // Durchgestrichener Kreis — steht für „ausblenden"
     ban: '<circle cx="12" cy="12" r="9.5"/><path d="M5.4 5.4l13.2 13.2"/>',
+    /* Reagenzglas, leicht gekippt, mit Füllstand und zwei Bläschen —
+       kennzeichnet experimentelle Funktionen (BETA) */
+    flask:
+      '<path d="M14.5 2.5 8 4.2"/><path d="M12.9 2.9l3.9 14.6a3 3 0 1 1-5.8 1.5L7.1 4.4"/>' +
+      '<path d="M9.5 13.2l5.8-1.5"/><circle cx="12.6" cy="15.4" r=".5"/><circle cx="13.6" cy="17.9" r=".5"/>',
     trash: '<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/>',
     info: '<circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
     alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',

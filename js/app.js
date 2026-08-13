@@ -2992,12 +2992,47 @@ REGELN
     el("#msg-dialog").showModal();
   }
 
+  /* Beim dritten Start einmalig ans Sichern erinnern. Der Zeitpunkt ist
+     bewusst gewählt: Beim ersten Start läuft die Einrichtung, beim dritten
+     stehen meist echte Daten drin — und noch kein Backup. Die App speichert
+     nichts außerhalb des Geräts; bei einer Deinstallation wäre ohne
+     Sicherung alles verloren. */
+  function maybeBackupHint() {
+    const s = state.settings;
+    s.openCount = (s.openCount || 0) + 1;
+    saveData();
+    if (s.backupHintDone || s.openCount < 3 || !s.setupDone) return;
+    // Läuft gerade ein Dialog (z. B. die Einrichtung), warten wir auf den
+    // nächsten Start, statt dazwischenzufunken.
+    if (document.querySelector("dialog[open]")) return;
+    s.backupHintDone = true;
+    saveData();
+    showConfirm(
+      "Denk an ein Backup",
+      `<p>Deine Impfdaten liegen <strong>nur auf diesem Gerät</strong> — die
+       App speichert bewusst nichts im Internet. Geht das Handy verloren oder
+       wird die App deinstalliert, wären alle Einträge weg.</p>
+       <p>Erstelle deshalb am besten jetzt ein Backup und lege die Datei
+       zusätzlich an einem zweiten Ort ab — zum Beispiel in deiner eigenen
+       Cloud oder als E-Mail an dich selbst.</p>
+       <p class="hint">Später findest du das jederzeit unter
+       Profil&nbsp;→&nbsp;Daten&nbsp;→&nbsp;„Backup erstellen".</p>`,
+      "Jetzt Backup erstellen",
+      () => openBackup(),
+      false
+    );
+  }
+
   // App-gestylter Bestätigungs-Dialog (Ersatz für Browser-Confirms).
   let confirmAction = null;
-  function showConfirm(title, html, confirmLabel, onConfirm) {
+  /* gefahr=false färbt den Bestätigungs-Knopf freundlich statt rot —
+     für Hinweise wie die Backup-Erinnerung, die nichts zerstören. */
+  function showConfirm(title, html, confirmLabel, onConfirm, gefahr = true) {
     el("#confirm-title").textContent = title;
     el("#confirm-body").innerHTML = html;
-    el("#confirm-go").textContent = confirmLabel;
+    const go = el("#confirm-go");
+    go.textContent = confirmLabel;
+    go.className = "btn " + (gefahr ? "btn-danger" : "btn-primary");
     confirmAction = onConfirm;
     el("#confirm-dialog").showModal();
   }
@@ -3601,6 +3636,7 @@ REGELN
 
     render();
     maybeStartSetup();
+    maybeBackupHint();
     setTimeout(() => checkAndNotify(false), 800);
 
     // Erinnerungen: Android-Kanal anlegen und Planung auffrischen (Termine
