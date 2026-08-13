@@ -470,6 +470,35 @@
         <h3 id="pr-title">Impfung prüfen</h3>
         <p class="hint" id="pr-progress"></p>
         <div id="pr-body"></div>
+        <button type="button" class="btn btn-small" id="pr-add">
+          + Weitere Impfung hinzufügen
+        </button>
+        <div id="pr-add-form" class="pr-add-form hidden">
+          <p class="hint">
+            Für Einträge, die die Erkennung übersehen hat — wird bei
+            <strong id="pr-add-ziel"></strong> eingetragen.
+          </p>
+          <div class="pr-fields">
+            <label><span class="pr-label">Datum</span>
+              <input type="date" id="pr-add-datum" />
+            </label>
+            <label><span class="pr-label">Impfstoff</span>
+              <input type="text" id="pr-add-produkt" placeholder="Handelsname" />
+            </label>
+            <label><span class="pr-label">Charge</span>
+              <input type="text" id="pr-add-charge" />
+            </label>
+          </div>
+          <label class="pr-sync">
+            <input type="checkbox" id="pr-add-more" />
+            <span>An diesem Termin gab es weitere Impfungen (z. B. Kombi-Impfstoff)</span>
+          </label>
+          <div id="pr-add-liste" class="pr-add-liste hidden"></div>
+          <p class="hint" id="pr-add-msg"></p>
+          <button type="button" class="btn btn-small btn-primary" id="pr-add-go">
+            Hinzufügen
+          </button>
+        </div>
         <p class="hint" id="pr-note"></p>
         <div class="dlg-actions">
           <button type="button" class="btn" id="pr-skip">Überspringen</button>

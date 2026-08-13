@@ -1181,12 +1181,22 @@ REGELN
         (warnungen.length ? " " + warnungen[0] : "");
       return;
     }
+    /* Das Original-Datum je Eintrag festhalten: Es bleibt der Anker für
+       Datums-Korrekturen und den Beleg „im Pass stand", auch wenn die
+       Nutzerin das Datum ändert und die Liste neu sortiert wird. */
+    vorschlaege.forEach((b) =>
+      b.eintraege.forEach((e) => {
+        e.datumOrig = e.datum;
+      })
+    );
     importVorschlaege = vorschlaege;
     importIndex = 0;
     importUebernommen = 0;
     importErgaenzt = 0;
     importWarnungen = warnungen;
     importDatumKorrekturen = {};
+    importAngelegt = [];
+    importAddBlock = null;
     el("#pass-import-dialog").close();
     zeigeImportSchritt();
   }
@@ -1197,58 +1207,88 @@ REGELN
      dieselbe Korrektur nicht bei fünf weiteren Impfungen wiederholen —
      eine Passzeile ist EIN Termin. */
   let importDatumKorrekturen = {};
+  /* In diesem Import bereits angelegte Datensätze samt Herkunftszeile —
+     nötig, um bei „Impfung falsch erkannt" auch schon Eingetragenes
+     derselben Passzeile wieder herausnehmen zu können. */
+  let importAngelegt = [];
+  let importAddBlock = null; // Block, für den das Nachtrage-Formular steht
+
+  /* Beurteilt einen Eintrag gegen den Bestand: neu, ergänzbar (Lücken
+     füllen) oder vollständig vorhanden — inkl. Familien-Schwestern. Wird
+     beim Zeichnen UND beim Übernehmen gerufen, damit beide dieselbe
+     Wahrheit sehen. */
+  function importBefund(block, e) {
+    const bestand = recordsFor(activeProfile(), block.vacId).find(
+      (r) => r.date === e.datum
+    );
+    const ergaenzungen = [];
+    if (bestand) {
+      if (e.produkt && !bestand.product) ergaenzungen.push("Impfstoff");
+      if (e.charge && !bestand.batch) ergaenzungen.push("Charge");
+      if (e.arzt && !bestand.doctor) ergaenzungen.push("Ärztin/Arzt");
+    }
+    let famDoppelt = false;
+    const fam = STIKO.FAMILIE[block.vacId];
+    if (!bestand && fam) {
+      famDoppelt = Object.keys(STIKO.FAMILIE).some(
+        (id) =>
+          STIKO.FAMILIE[id] === fam &&
+          id !== block.vacId &&
+          recordsFor(activeProfile(), id).some((r) => r.date === e.datum)
+      );
+    }
+    const modus = bestand
+      ? ergaenzungen.length
+        ? "ergaenzen"
+        : "doppelt"
+      : famDoppelt
+      ? "doppelt"
+      : "neu";
+    return { bestand, ergaenzungen, famDoppelt, modus };
+  }
 
   function zeigeImportSchritt() {
     if (importIndex >= importVorschlaege.length) return beendeImport();
     const block = importVorschlaege[importIndex];
-    const vorhandene = recordsFor(activeProfile(), block.vacId).map((r) => r.date);
+
+    /* Gemerkte Datums-Korrekturen anwenden und chronologisch sortieren —
+       so reihen sich geänderte wie nachgetragene Einträge zwischen die
+       übrigen ein, und die Übersicht bleibt bestehen. */
+    block.eintraege.forEach((e) => {
+      const k = e.datumOrig ? importDatumKorrekturen[e.datumOrig] : null;
+      if (k && e.datum === e.datumOrig) {
+        e.datum = k.datum;
+        e.korrekturQuelle = k.quelle;
+      }
+    });
+    block.eintraege.sort((a, b) =>
+      (a.datum || "9999").localeCompare(b.datum || "9999")
+    );
 
     el("#pr-title").textContent = `Stimmen diese Einträge zu ${block.name}?`;
     el("#pr-progress").textContent = `Impfung ${importIndex + 1} von ${
       importVorschlaege.length
     }`;
 
-    const bestandAlle = recordsFor(activeProfile(), block.vacId);
-    /* Daten, an denen bereits eine Schwester-Impfung derselben Familie
-       eingetragen ist (Meningokokken C vs. ACWY, MMR vs. Einzelimpfungen) —
-       sehr wahrscheinlich derselbe Termin aus einem anderen Heft. */
-    const familienDaten = new Set();
-    const fam = STIKO.FAMILIE[block.vacId];
-    if (fam) {
-      Object.keys(STIKO.FAMILIE)
-        .filter((id) => STIKO.FAMILIE[id] === fam && id !== block.vacId)
-        .forEach((id) =>
-          recordsFor(activeProfile(), id).forEach((r) => familienDaten.add(r.date))
-        );
-    }
+    /* Für die Zeile „Am selben Tag außerdem geimpft" — über alle Blöcke. */
+    const proTag = new Map();
+    importVorschlaege.forEach((b) =>
+      b.eintraege.forEach((e) => {
+        if (!e.datum) return;
+        if (!proTag.has(e.datum)) proTag.set(e.datum, new Set());
+        proTag.get(e.datum).add(b.name);
+      })
+    );
+
     el("#pr-body").innerHTML = block.eintraege
       .map((e, i) => {
-        const korrektur = importDatumKorrekturen[e.datum];
-        const datum = korrektur ? korrektur.datum : e.datum;
-
-        /* Drei Fälle: neu — ergänzbar (Eintrag existiert, aber ihm fehlen
-           Angaben, die der Import mitbringt) — vollständig vorhanden.
-           Ergänzen füllt nur Lücken; was schon dasteht, bleibt unberührt. */
-        const bestand = bestandAlle.find((r) => r.date === datum);
-        const ergaenzungen = [];
-        if (bestand) {
-          if (e.produkt && !bestand.product) ergaenzungen.push("Impfstoff");
-          if (e.charge && !bestand.batch) ergaenzungen.push("Charge");
-          if (e.arzt && !bestand.doctor) ergaenzungen.push("Ärztin/Arzt");
-        }
-        const famDoppelt = !bestand && familienDaten.has(datum);
-        const modus = bestand
-          ? ergaenzungen.length
-            ? "ergaenzen"
-            : "doppelt"
-          : famDoppelt
-          ? "doppelt"
-          : "neu";
+        const { bestand, ergaenzungen, famDoppelt, modus } = importBefund(block, e);
+        const angehakt = e.take !== undefined ? e.take : modus !== "doppelt";
 
         const notizen = [];
-        if (korrektur)
+        if (e.korrekturQuelle)
           notizen.push(
-            `<p class="pr-sync-note">Datum übernommen aus ${esc(korrektur.quelle)}.</p>`
+            `<p class="pr-sync-note">Datum übernommen aus ${esc(e.korrekturQuelle)}.</p>`
           );
         if (modus === "ergaenzen")
           notizen.push(
@@ -1277,6 +1317,19 @@ REGELN
           notizen.push(
             `<p class="pr-anno">Vermerk der Erkennung: ${esc(e.anmerkung)}</p>`
           );
+        if (e.manuell)
+          notizen.push(`<p class="pr-anno">Von Hand ergänzt.</p>`);
+
+        /* Kleiner Kontext gegen Fehlzuordnungen: Was wurde am selben Tag
+           laut Erkennung noch verabreicht? */
+        const andere = [...(proTag.get(e.datum) || [])].filter(
+          (n) => n !== block.name
+        );
+        const sameday = andere.length
+          ? `<p class="pr-sameday">Am selben Tag wurde auch geimpft: ${andere
+              .map(esc)
+              .join(", ")}</p>`
+          : "";
 
         /* Vorhandene Angaben werden angezeigt, aber nicht zum Ändern
            angeboten — der Import überschreibt nie, er füllt nur auf. */
@@ -1303,43 +1356,87 @@ REGELN
         }">
           <div class="pr-row-head">
             <label class="pr-take">
-              <input type="checkbox" data-take="${i}" ${modus === "doppelt" ? "" : "checked"} />
+              <input type="checkbox" data-take="${i}" ${angehakt ? "checked" : ""} />
               <span>${modus === "ergaenzen" ? "Angaben ergänzen" : "übernehmen"}</span>
             </label>
             <span class="pr-quelle">${esc(e.datumRoh || "")}</span>
           </div>
           <div class="pr-fields">
             <label><span class="pr-label">Datum</span>
-              <input type="date" data-feld="datum" data-i="${i}" value="${esc(datum)}" />
+              <input type="date" data-feld="datum" data-i="${i}" value="${esc(e.datum || "")}" />
             </label>
             ${produktFeld}
             ${chargeFeld}
           </div>
-          <label class="pr-sync">
-            <input type="checkbox" data-sync="${i}" checked />
+          <label class="pr-sync${e.datum === e.datumOrig ? " hidden" : ""}">
+            <input type="checkbox" data-sync="${i}" ${e.sync === false ? "" : "checked"} />
             <span>Geändertes Datum auch für die anderen Impfungen dieses Tages übernehmen</span>
           </label>
+          ${sameday}
           ${notizen.join("")}
+          <div class="pr-row-foot">
+            <button type="button" class="pr-wrong" data-wrong="${i}">Impfung falsch erkannt</button>
+          </div>
         </div>`;
       })
       .join("");
 
-    /* Das Übernehmen-Häkchen erst zeigen, wenn wirklich am Datum gedreht
-       wurde — vorher ist es nur Rauschen. */
-    el("#pr-body")
-      .querySelectorAll('[data-feld="datum"]')
-      .forEach((feld) => {
-        const i = feld.dataset.i;
-        const orig = feld.value;
-        const sync = el("#pr-body").querySelector(`[data-sync="${i}"]`);
-        if (sync) sync.closest(".pr-sync").classList.add("hidden");
-        feld.addEventListener("input", () => {
-          if (sync)
-            sync
-              .closest(".pr-sync")
-              .classList.toggle("hidden", feld.value === orig);
-        });
+    /* Eingaben direkt ins Modell schreiben — nur so überleben sie das
+       Neusortieren nach einer Datumsänderung. */
+    const body = el("#pr-body");
+    body.querySelectorAll("[data-feld]").forEach((feld) => {
+      const e = block.eintraege[+feld.dataset.i];
+      feld.addEventListener("input", () => {
+        if (feld.dataset.feld === "produkt") e.produkt = feld.value;
+        else if (feld.dataset.feld === "charge") e.charge = feld.value;
       });
+    });
+    body.querySelectorAll('[data-feld="datum"]').forEach((feld) => {
+      feld.addEventListener("change", () => {
+        const e = block.eintraege[+feld.dataset.i];
+        if (!feld.value) return;
+        e.datum = feld.value;
+        delete e.korrekturQuelle;
+        zeigeImportSchritt(); // neu einsortieren
+      });
+    });
+    body.querySelectorAll("[data-take]").forEach((cb) =>
+      cb.addEventListener("change", () => {
+        block.eintraege[+cb.dataset.take].take = cb.checked;
+      })
+    );
+    body.querySelectorAll("[data-sync]").forEach((cb) =>
+      cb.addEventListener("change", () => {
+        block.eintraege[+cb.dataset.sync].sync = cb.checked;
+      })
+    );
+    body.querySelectorAll("[data-wrong]").forEach((b) =>
+      b.addEventListener("click", () => importFalschErkannt(+b.dataset.wrong))
+    );
+
+    /* Nachtrage-Formular je Block frisch aufsetzen (bleibt bei bloßem
+       Neuzeichnen desselben Blocks unangetastet, damit Eingaben erhalten
+       bleiben). */
+    if (importAddBlock !== block) {
+      importAddBlock = block;
+      el("#pr-add-form").classList.add("hidden");
+      el("#pr-add-datum").value = "";
+      el("#pr-add-produkt").value = "";
+      el("#pr-add-charge").value = "";
+      el("#pr-add-more").checked = false;
+      el("#pr-add-msg").textContent = "";
+      el("#pr-add-ziel").textContent = block.name;
+      const liste = el("#pr-add-liste");
+      liste.classList.add("hidden");
+      liste.innerHTML = STIKO_SCHEDULE.filter((v) => v.id !== block.vacId)
+        .map(
+          (v) =>
+            `<label class="pr-add-vac"><input type="checkbox" value="${v.id}" /> ${esc(
+              v.name
+            )}</label>`
+        )
+        .join("");
+    }
 
     const unsicher = block.eintraege.filter((e) => e.sicherheit === "niedrig").length;
     el("#pr-note").textContent = unsicher
@@ -1351,52 +1448,182 @@ REGELN
   function uebernehmeImportSchritt(uebernehmen) {
     const block = importVorschlaege[importIndex];
     if (uebernehmen) {
-      const dlg = el("#pr-body");
       const p = activeProfile();
       block.eintraege.forEach((e, i) => {
-        const hole = (feld) =>
-          (dlg.querySelector(`[data-feld="${feld}"][data-i="${i}"]`) || {}).value || "";
-        const datum = hole("datum");
-
         /* Datums-Korrektur merken — unabhängig davon, ob die Zeile selbst
            übernommen wird. Schlüssel ist das Original aus dem Pass. */
-        const sync = dlg.querySelector(`[data-sync="${i}"]`);
-        if (datum && datum !== e.datum && sync && sync.checked) {
-          importDatumKorrekturen[e.datum] = { datum, quelle: block.name };
+        if (
+          e.datumOrig &&
+          e.datum &&
+          e.datum !== e.datumOrig &&
+          e.sync !== false
+        ) {
+          importDatumKorrekturen[e.datumOrig] = {
+            datum: e.datum,
+            quelle: block.name,
+          };
         }
 
-        const an = dlg.querySelector(`[data-take="${i}"]`);
-        if (!an || !an.checked || !datum) return;
+        const { bestand, modus } = importBefund(block, e);
+        const angehakt = e.take !== undefined ? e.take : modus !== "doppelt";
+        if (!angehakt || !e.datum) return;
 
         /* Existiert der Eintrag schon, wird er angereichert statt doppelt
            angelegt: Nur leere Felder werden gefüllt, Vorhandenes bleibt
-           unangetastet. Der Abgleich läuft über das aktuelle Datum im Feld —
-           wer das Datum ändert, legt bewusst einen neuen Eintrag an. */
-        const bestand = recordsFor(p, block.vacId).find((r) => r.date === datum);
+           unangetastet. */
         if (bestand) {
           let ergaenzt = false;
-          const produkt = hole("produkt");
-          const charge = hole("charge");
-          if (produkt && !bestand.product) { bestand.product = produkt; ergaenzt = true; }
-          if (charge && !bestand.batch) { bestand.batch = charge; ergaenzt = true; }
+          if (e.produkt && !bestand.product) { bestand.product = e.produkt; ergaenzt = true; }
+          if (e.charge && !bestand.batch) { bestand.batch = e.charge; ergaenzt = true; }
           if (e.arzt && !bestand.doctor) { bestand.doctor = e.arzt; ergaenzt = true; }
           if (ergaenzt) importErgaenzt++;
           return;
         }
+        const id = "imp" + Date.now() + "_" + importIndex + "_" + i;
         p.records.push({
-          id: "imp" + Date.now() + "_" + importIndex + "_" + i,
-          date: datum,
-          product: hole("produkt"),
-          batch: hole("charge"),
+          id,
+          date: e.datum,
+          product: e.produkt || "",
+          batch: e.charge || "",
           doctor: e.arzt || "",
           targets: [block.vacId],
         });
+        importAngelegt.push({ id, zeile: e.zeile || null, vacId: block.vacId });
         importUebernommen++;
       });
       saveData();
     }
     importIndex++;
     zeigeImportSchritt();
+  }
+
+  /* „Impfung falsch erkannt": entfernt den Eintrag. Stammen aus derselben
+     Passzeile weitere Impfungen (Kombi-Impfstoff, Kreuze derselben Zeile),
+     hängen sie an derselben Fehl-Lesung — eine Meldung zählt sie auf, und
+     sie gehen mit raus, auch wenn sie schon eingetragen wurden. */
+  function importFalschErkannt(i) {
+    const block = importVorschlaege[importIndex];
+    const e = block.eintraege[i];
+
+    const springeWeiter = () => {
+      const ziel = block.eintraege.length
+        ? block
+        : importVorschlaege
+            .slice(importIndex + 1)
+            .find((b) => b.eintraege.length) || null;
+      importVorschlaege = importVorschlaege.filter((b) => b.eintraege.length);
+      importIndex = ziel ? importVorschlaege.indexOf(ziel) : importVorschlaege.length;
+      zeigeImportSchritt();
+    };
+
+    // Ohne Herkunftszeile (z. B. von Hand ergänzt): nur diesen entfernen.
+    if (!e.zeile) {
+      block.eintraege.splice(i, 1);
+      return springeWeiter();
+    }
+
+    const inBloecken = [];
+    importVorschlaege.forEach((b) => {
+      if (b === block) return;
+      b.eintraege.forEach((x) => {
+        if (x.zeile === e.zeile) inBloecken.push({ b, x });
+      });
+    });
+    const schonAngelegt = importAngelegt.filter((a) => a.zeile === e.zeile);
+    const namen = [
+      ...new Set([
+        ...inBloecken.map((g) => g.b.name),
+        ...schonAngelegt.map((a) => vaccineNameById(a.vacId)),
+      ]),
+    ];
+
+    if (!namen.length) {
+      block.eintraege.splice(i, 1);
+      return springeWeiter();
+    }
+
+    showConfirm(
+      "Impfung falsch erkannt?",
+      `<p>Aus derselben Zeile des Impfpasses wurden am selben Tag außerdem
+       erkannt:</p>
+       <ul>${namen.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>
+       <p>Sie stammen aus derselben Lesung und werden mit entfernt.</p>`,
+      "Alle entfernen",
+      () => {
+        inBloecken.forEach(({ b, x }) => {
+          b.eintraege = b.eintraege.filter((y) => y !== x);
+        });
+        if (schonAngelegt.length) {
+          const p = activeProfile();
+          const ids = new Set(schonAngelegt.map((a) => a.id));
+          p.records = p.records.filter((r) => !ids.has(r.id));
+          importAngelegt = importAngelegt.filter((a) => !ids.has(a.id));
+          importUebernommen -= schonAngelegt.length;
+          saveData();
+        }
+        block.eintraege.splice(i, 1);
+        springeWeiter();
+      }
+    );
+  }
+
+  /* Nachtragen, was die Erkennung übersehen hat — wahlweise gleich für
+     mehrere Impfungen desselben Termins (Kombi-Spritze). Einträge landen
+     im jeweiligen Block und reihen sich dort chronologisch ein; gibt es
+     den Block nicht mehr oder nicht, wird er hinten angehängt. */
+  function importNachtragen() {
+    const datum = el("#pr-add-datum").value;
+    const msg = el("#pr-add-msg");
+    if (!datum) {
+      msg.textContent = "Bitte zuerst das Impfdatum angeben.";
+      return;
+    }
+    const block = importVorschlaege[importIndex];
+    const produkt = el("#pr-add-produkt").value.trim();
+    const charge = el("#pr-add-charge").value.trim();
+    const weitere = el("#pr-add-more").checked
+      ? [...el("#pr-add-liste").querySelectorAll("input:checked")].map((c) => c.value)
+      : [];
+    const ziele = [block.vacId, ...weitere.filter((v) => v !== block.vacId)];
+
+    ziele.forEach((vacId) => {
+      const eintrag = {
+        datum,
+        datumOrig: datum,
+        datumRoh: "",
+        produkt,
+        charge,
+        arzt: "",
+        sicherheit: "",
+        anmerkung: "",
+        konflikt: null,
+        zeile: null,
+        manuell: true,
+        take: true,
+        sync: false,
+      };
+      let ziel = null;
+      for (let bi = importIndex; bi < importVorschlaege.length; bi++) {
+        if (importVorschlaege[bi].vacId === vacId) {
+          ziel = importVorschlaege[bi];
+          break;
+        }
+      }
+      if (ziel) ziel.eintraege.push(eintrag);
+      else
+        importVorschlaege.push({
+          vacId,
+          name: vaccineNameById(vacId),
+          eintraege: [eintrag],
+        });
+    });
+    importAddBlock = null; // Formular schließen und leeren
+    zeigeImportSchritt();
+    showToast(
+      ziele.length > 1
+        ? `Für ${ziele.length} Impfungen nachgetragen`
+        : "Eintrag nachgetragen"
+    );
   }
 
   function beendeImport() {
@@ -3547,6 +3774,13 @@ REGELN
     el("#pr-take").addEventListener("click", () => uebernehmeImportSchritt(true));
     el("#pr-skip").addEventListener("click", () => uebernehmeImportSchritt(false));
     el("#pr-abort").addEventListener("click", abbrechenImport);
+    el("#pr-add").addEventListener("click", () =>
+      el("#pr-add-form").classList.toggle("hidden")
+    );
+    el("#pr-add-more").addEventListener("change", (ev) =>
+      el("#pr-add-liste").classList.toggle("hidden", !ev.target.checked)
+    );
+    el("#pr-add-go").addEventListener("click", importNachtragen);
     el("#book-save").addEventListener("click", saveBookDialog);
     el("#book-cancel").addEventListener("click", () => el("#book-dialog").close());
     el("#backup-go").addEventListener("click", doBackup);
