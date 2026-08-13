@@ -918,7 +918,7 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück, ohne Erklärung davor oder danach:
       "sicherheit": "hoch",
       "impfstoffe": [
         { "handelsname": "Infanrix hexa", "charge": "A21CC087A" },
-        { "handelsname": "Prevenar 13", "charge": "H96560" }
+        { "handelsname": "Prevenar 13", "charge": "H96560", "verwendbarBis": "2015-12" }
       ],
       "angekreuzt": ["Tetanus", "Diphtherie", "Pertussis", "Poliomyelitis", "Hib", "Hepatitis B", "Pneumokokken"],
       "impfungGegenText": null,
@@ -931,7 +931,10 @@ Gib AUSSCHLIESSLICH ein JSON-Objekt zurück, ohne Erklärung davor oder danach:
 REGELN
 
 1. Eine Zeile im Pass = ein Objekt in "zeilen". Auch wenn dort mehrere
-   Impfstoff-Vignetten kleben.
+   Impfstoff-Vignetten kleben. Führe die Zeilen in LESEREIHENFOLGE auf
+   (Seite für Seite, von oben nach unten) und fülle "seite" IMMER — die
+   App erkennt daran verlesene Jahreszahlen, denn Passseiten sind
+   chronologisch beschrieben.
 
 2. "seitentyp":
    - "kinder" für Seiten mit Ankreuz-Spalten (Überschrift "Impfungen für
@@ -948,9 +951,17 @@ REGELN
    Kannst du es nicht sicher lesen: "datum": null setzen und in "anmerkung"
    beschreiben, was du siehst.
 
+3a. SELBSTPRÜFUNG DATUM: Passseiten sind fast immer chronologisch
+   beschrieben. Weicht ein gelesenes Datum deutlich von seinen
+   Nachbarzeilen ab (z. B. 2002 zwischen 2021 und 2022), lies es erneut —
+   vermutlich ist eine Ziffer verlesen. Bleibt es dabei, setze
+   "sicherheit": "niedrig" und beschreibe den Widerspruch in "anmerkung".
+
 4. VERWECHSLUNGSGEFAHR: Auf den Vignetten steht ein Verfallsdatum
    ("Verw. bis 12 2015", "Verwendbar bis 03 2018"). Das ist NICHT das
-   Impfdatum. Übernimm es nirgends.
+   Impfdatum. Übernimm es NIE als Impfdatum — trage es stattdessen je
+   Impfstoff als "verwendbarBis": "JJJJ-MM" ein (nur wenn aufgedruckt);
+   die App prüft damit, ob das Impfdatum plausibel ist.
 
 5. IMPFSTOFFE: Handelsname und Chargennummer von der gedruckten Vignette
    ODER aus der Spalte "Handelsname und Chargennummer" — dort stehen sie
@@ -1025,8 +1036,69 @@ REGELN
   function auswertenImport(daten) {
     const proTyp = new Map();
     const warnungen = [];
+    const zeilenListe = daten.zeilen || [];
+    // Gültige Daten je Zeile vorab — Grundlage der Reihenfolge-Prüfung.
+    const rohDatum = zeilenListe.map((z) => importDatum(z));
+    const tage = (a, b) => Math.round((parseDate(a) - parseDate(b)) / 864e5);
 
-    (daten.zeilen || []).forEach((z, i) => {
+    /* Prüft ein gelesenes Datum auf Plausibilität, ohne je selbst zu
+       korrigieren. Drei unabhängige Zeugen:
+       1. Die Reihenfolge im Pass — Seiten sind chronologisch beschrieben.
+          Fällt ein Datum um mehr als gut ein Jahr aus der Reihe seiner
+          Seiten-Nachbarn, ist meist eine Jahreszahl verlesen (2002/2022).
+       2. Das aufgedruckte Verfallsdatum der Vignette — Impfstoffe halten
+          1–3 Jahre; ein Impfdatum weit davor oder danach ist unmöglich.
+       3. Das Geburtsdatum der Person. */
+    function datumsVerdacht(z, i, datum) {
+      const verdachte = [];
+      const seite = z.seite || null;
+      if (seite != null) {
+        let vor = null;
+        let nach = null;
+        for (let j = i - 1; j >= 0; j--)
+          if ((zeilenListe[j].seite || null) === seite && rohDatum[j]) {
+            vor = zeilenListe[j];
+            break;
+          }
+        for (let j = i + 1; j < zeilenListe.length; j++)
+          if ((zeilenListe[j].seite || null) === seite && rohDatum[j]) {
+            nach = zeilenListe[j];
+            break;
+          }
+        let abstand = 0;
+        if (vor && tage(vor.datum, datum) > 0)
+          abstand = Math.max(abstand, tage(vor.datum, datum));
+        if (nach && tage(datum, nach.datum) > 0)
+          abstand = Math.max(abstand, tage(datum, nach.datum));
+        if (abstand > 400) {
+          const teile = [];
+          if (vor) teile.push(`nach „${vor.datumRoh || vor.datum}"`);
+          if (nach) teile.push(`vor „${nach.datumRoh || nach.datum}"`);
+          verdachte.push(
+            `im Pass steht diese Zeile ${teile.join(
+              " und "
+            )} — das gelesene Datum fällt aus der Reihenfolge, vermutlich ist die Jahreszahl verlesen`
+          );
+        }
+      }
+      (z.impfstoffe || []).forEach((p) => {
+        const vb = /^(\d{4})-(\d{2})$/.exec(p.verwendbarBis || "");
+        if (!vb) return;
+        const d = parseDate(datum);
+        const fruehestens = new Date(+vb[1] - 4, +vb[2] - 1, 1);
+        const spaetestens = new Date(+vb[1] + 1, +vb[2] - 1, 1);
+        if (d < fruehestens || d > spaetestens)
+          verdachte.push(
+            `die Vignette trägt „verwendbar bis ${vb[2]}/${vb[1]}" — das passt nicht zu diesem Impfdatum`
+          );
+      });
+      const geb = parseDate(activeProfile().birthdate);
+      if (geb && parseDate(datum) < geb)
+        verdachte.push("liegt vor dem Geburtsdatum der Person");
+      return verdachte.join("; ") || null;
+    }
+
+    zeilenListe.forEach((z, i) => {
       const nr = i + 1;
       const datum = importDatum(z);
       if (!datum) {
@@ -1036,6 +1108,7 @@ REGELN
         );
         return;
       }
+      const datumVerdacht = datumsVerdacht(z, i, datum);
 
       // 1) Aus den Handelsnamen ableiten — die verlässlichste Quelle.
       const ausProdukt = new Map();
@@ -1102,6 +1175,7 @@ REGELN
           arzt: z.arzt || "",
           sicherheit: z.sicherheit || "",
           anmerkung: z.anmerkung || "",
+          datumVerdacht,
           konflikt,
           zeile: nr,
         });
@@ -1193,6 +1267,9 @@ REGELN
     vorschlaege.forEach((b) =>
       b.eintraege.forEach((e) => {
         e.datumOrig = e.datum;
+        e.produktOrig = e.produkt;
+        e.chargeOrig = e.charge;
+        e.arztOrig = e.arzt;
       })
     );
     importVorschlaege = vorschlaege;
@@ -1201,6 +1278,7 @@ REGELN
     importErgaenzt = 0;
     importWarnungen = warnungen;
     importDatumKorrekturen = {};
+    importFeldKorrekturen = {};
     importAngelegt = [];
     importAddBlock = null;
     el("#pass-import-dialog").close();
@@ -1213,6 +1291,11 @@ REGELN
      dieselbe Korrektur nicht bei fünf weiteren Impfungen wiederholen —
      eine Passzeile ist EIN Termin. */
   let importDatumKorrekturen = {};
+  /* Korrigierte Angaben je Passzeile: zeile → { produkt, charge, arzt,
+     quelle }. Eine Zeile ist EINE Spritze — wer bei Tetanus die Charge
+     berichtigt, muss das bei den fünf Geschwistern der Kombi nicht
+     wiederholen. */
+  let importFeldKorrekturen = {};
   /* In diesem Import bereits angelegte Datensätze samt Herkunftszeile —
      nötig, um bei „Impfung falsch erkannt" auch schon Eingetragenes
      derselben Passzeile wieder herausnehmen zu können. */
@@ -1265,6 +1348,21 @@ REGELN
       if (k && e.datum === e.datumOrig) {
         e.datum = k.datum;
         e.korrekturQuelle = k.quelle;
+        // Die Korrektur klärt den Verdacht — er galt dem alten Datum.
+        delete e.datumVerdacht;
+      }
+      /* Berichtigte Angaben derselben Passzeile übernehmen — aber nur in
+         Felder, die die Nutzerin hier nicht selbst angefasst hat. */
+      const fk = e.zeile ? importFeldKorrekturen[e.zeile] : null;
+      if (fk) {
+        let uebernommen = false;
+        ["produkt", "charge", "arzt"].forEach((f) => {
+          if (fk[f] !== undefined && e[f] === e[f + "Orig"]) {
+            e[f] = fk[f];
+            uebernommen = true;
+          }
+        });
+        if (uebernommen) e.korrekturQuelle = fk.quelle;
       }
     });
     block.eintraege.sort((a, b) =>
@@ -1294,7 +1392,7 @@ REGELN
         const notizen = [];
         if (e.korrekturQuelle)
           notizen.push(
-            `<p class="pr-sync-note">Datum übernommen aus ${esc(e.korrekturQuelle)}.</p>`
+            `<p class="pr-sync-note">Korrektur übernommen aus ${esc(e.korrekturQuelle)}.</p>`
           );
         if (modus === "ergaenzen")
           notizen.push(
@@ -1309,6 +1407,15 @@ REGELN
                   block.name
                 )}") — vermutlich derselbe Termin aus einem anderen Heft. Bleibt abgewählt.</p>`
               : `<p class="pr-dup-note">Bereits vollständig im Impfpass vorhanden — z. B. aus einem zweiten Impfausweis oder Übertrag. Bleibt abgewählt.</p>`
+          );
+        /* Datums-Verdacht zuerst und deutlich: Die Impfung ist vermutlich
+           echt, nur die Jahreszahl verlesen — hier korrigieren, nicht
+           abwählen. Die App ändert das Datum nie von selbst. */
+        if (e.datumVerdacht)
+          notizen.unshift(
+            `<p class="pr-datecheck">Bitte Datum prüfen: ${esc(
+              e.datumVerdacht
+            )}.</p>`
           );
         if (e.konflikt)
           notizen.push(
@@ -1365,6 +1472,7 @@ REGELN
           modus === "ergaenzen" ? " pr-ergaenzen" : ""
         }">
           <div class="pr-row-head">
+            <span class="pr-num">${i + 1} von ${block.eintraege.length}</span>
             <label class="pr-take">
               <input type="checkbox" data-take="${i}" ${angehakt ? "checked" : ""} />
               <span>${modus === "ergaenzen" ? "Angaben ergänzen" : "übernehmen"}</span>
@@ -1379,9 +1487,16 @@ REGELN
             ${chargeFeld}
             ${arztFeld}
           </div>
-          <label class="pr-sync${e.datum === e.datumOrig ? " hidden" : ""}">
+          <label class="pr-sync${
+            e.datum === e.datumOrig &&
+            e.produkt === e.produktOrig &&
+            e.charge === e.chargeOrig &&
+            e.arzt === e.arztOrig
+              ? " hidden"
+              : ""
+          }">
             <input type="checkbox" data-sync="${i}" ${e.sync === false ? "" : "checked"} />
-            <span>Geändertes Datum auch für die anderen Impfungen dieses Tages übernehmen</span>
+            <span>Änderung auch für die anderen Impfungen dieses Termins übernehmen</span>
           </label>
           ${sameday}
           ${notizen.join("")}
@@ -1401,6 +1516,17 @@ REGELN
         if (feld.dataset.feld === "produkt") e.produkt = feld.value;
         else if (feld.dataset.feld === "charge") e.charge = feld.value;
         else if (feld.dataset.feld === "arzt") e.arzt = feld.value;
+        // Sobald etwas vom Original abweicht, das Übernahme-Häkchen zeigen.
+        const zeile = feld.closest(".pr-row");
+        const sync = zeile && zeile.querySelector(".pr-sync");
+        if (sync)
+          sync.classList.toggle(
+            "hidden",
+            e.datum === e.datumOrig &&
+              e.produkt === e.produktOrig &&
+              e.charge === e.chargeOrig &&
+              e.arzt === e.arztOrig
+          );
       });
     });
     body.querySelectorAll('[data-feld="datum"]').forEach((feld) => {
@@ -1409,6 +1535,8 @@ REGELN
         if (!feld.value) return;
         e.datum = feld.value;
         delete e.korrekturQuelle;
+        // Die Handkorrektur erledigt den Verdacht — er galt dem alten Wert.
+        delete e.datumVerdacht;
         zeigeImportSchritt(); // neu einsortieren
       });
     });
@@ -1463,18 +1591,30 @@ REGELN
     if (uebernehmen) {
       const p = activeProfile();
       block.eintraege.forEach((e, i) => {
-        /* Datums-Korrektur merken — unabhängig davon, ob die Zeile selbst
-           übernommen wird. Schlüssel ist das Original aus dem Pass. */
-        if (
-          e.datumOrig &&
-          e.datum &&
-          e.datum !== e.datumOrig &&
-          e.sync !== false
-        ) {
-          importDatumKorrekturen[e.datumOrig] = {
-            datum: e.datum,
-            quelle: block.name,
-          };
+        /* Korrekturen merken — unabhängig davon, ob die Zeile selbst
+           übernommen wird. Datum wird über das Original-Datum weitergegeben
+           (ein Termin, auch über Passzeilen hinweg), Impfstoff, Charge und
+           Arzt über die Passzeile (eine Zeile = eine Spritze). */
+        if (e.sync !== false) {
+          if (e.datumOrig && e.datum && e.datum !== e.datumOrig) {
+            importDatumKorrekturen[e.datumOrig] = {
+              datum: e.datum,
+              quelle: block.name,
+            };
+          }
+          if (e.zeile) {
+            const geaendert = {};
+            if (e.produkt !== e.produktOrig) geaendert.produkt = e.produkt;
+            if (e.charge !== e.chargeOrig) geaendert.charge = e.charge;
+            if (e.arzt !== e.arztOrig) geaendert.arzt = e.arzt;
+            if (Object.keys(geaendert).length) {
+              importFeldKorrekturen[e.zeile] = Object.assign(
+                importFeldKorrekturen[e.zeile] || {},
+                geaendert,
+                { quelle: block.name }
+              );
+            }
+          }
         }
 
         const { bestand, modus } = importBefund(block, e);

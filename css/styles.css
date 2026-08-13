@@ -2096,6 +2096,25 @@ dialog#quick-dialog::backdrop {
   font-style: italic;
   color: var(--ink-soft);
 }
+/* Datums-Verdacht: auffällig, denn hier ist meist die Impfung echt und
+   nur die Jahreszahl verlesen — korrigieren statt abwählen. */
+.pr-datecheck {
+  margin: 8px 0 0;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #7a3d00;
+  background: rgba(200, 120, 20, 0.14);
+  border: 1px solid rgba(200, 120, 20, 0.5);
+  border-radius: 8px;
+}
+/* Laufende Nummer im Kartenkopf („2 von 6") */
+.pr-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
 /* Kontext-Zeile: was am selben Tag laut Erkennung noch geimpft wurde */
 .pr-sameday {
   margin: 8px 0 0;
