@@ -904,7 +904,10 @@
 
   const IMPORT_PROMPT = `Du liest Fotos eines deutschen Impfpasses (gelbes WHO-Heft) aus.
 
-Gib AUSSCHLIESSLICH ein JSON-Objekt zurück, ohne Erklärung davor oder danach:
+Gib AUSSCHLIESSLICH ein JSON-Objekt zurück, ohne Erklärung davor oder
+danach. Setze die gesamte Antwort in EINEN Codeblock (\`\`\`json … \`\`\`),
+damit sie einen Kopieren-Knopf bekommt und sich mit einem Tipp vollständig
+kopieren lässt:
 
 {
   "format": "impfbuch-import",
