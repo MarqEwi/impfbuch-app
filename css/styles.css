@@ -2041,6 +2041,30 @@ dialog#quick-dialog::backdrop {
   font-weight: 600;
   color: var(--stamp-blue, #3a5a8c);
 }
+/* Ergänzungs-Modus: blauer Rand statt gestrichelt — hier passiert etwas,
+   nur eben am bestehenden Eintrag. */
+.pr-row.pr-ergaenzen {
+  border-color: var(--stamp-blue, #3a5a8c);
+}
+.pr-merge-note {
+  margin: 8px 0 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--stamp-blue, #3a5a8c);
+}
+/* Vorhandene Angabe: sichtbar, aber nicht änderbar */
+.pr-fixed {
+  display: block;
+  padding: 8px 9px;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  background: rgba(120, 115, 100, 0.08);
+  border: 1px dashed var(--btn-border);
+  border-radius: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .pr-dup-note {
   margin: 8px 0 0;
   font-size: 0.76rem;

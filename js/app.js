@@ -978,6 +978,7 @@ REGELN
   let importVorschlaege = [];   // je Impfung ein Block
   let importIndex = 0;
   let importUebernommen = 0;
+  let importErgaenzt = 0;       // bestehende Einträge, die Angaben erhielten
 
   function openPassImport() {
     el("#pi-input").value = "";
@@ -1111,6 +1112,7 @@ REGELN
     importVorschlaege = vorschlaege;
     importIndex = 0;
     importUebernommen = 0;
+    importErgaenzt = 0;
     importWarnungen = warnungen;
     importDatumKorrekturen = {};
     el("#pass-import-dialog").close();
@@ -1134,22 +1136,38 @@ REGELN
       importVorschlaege.length
     }`;
 
+    const bestandAlle = recordsFor(activeProfile(), block.vacId);
     el("#pr-body").innerHTML = block.eintraege
       .map((e, i) => {
         const korrektur = importDatumKorrekturen[e.datum];
         const datum = korrektur ? korrektur.datum : e.datum;
-        /* Schon eingetragen? Dann kommt der Eintrag aus einem zweiten Pass
-           oder einem früheren Import — abgewählt anbieten statt doppeln. */
-        const doppelt = vorhandene.includes(datum);
+
+        /* Drei Fälle: neu — ergänzbar (Eintrag existiert, aber ihm fehlen
+           Angaben, die der Import mitbringt) — vollständig vorhanden.
+           Ergänzen füllt nur Lücken; was schon dasteht, bleibt unberührt. */
+        const bestand = bestandAlle.find((r) => r.date === datum);
+        const ergaenzungen = [];
+        if (bestand) {
+          if (e.produkt && !bestand.product) ergaenzungen.push("Impfstoff");
+          if (e.charge && !bestand.batch) ergaenzungen.push("Charge");
+          if (e.arzt && !bestand.doctor) ergaenzungen.push("Ärztin/Arzt");
+        }
+        const modus = !bestand ? "neu" : ergaenzungen.length ? "ergaenzen" : "doppelt";
 
         const notizen = [];
         if (korrektur)
           notizen.push(
             `<p class="pr-sync-note">Datum übernommen aus ${esc(korrektur.quelle)}.</p>`
           );
-        if (doppelt)
+        if (modus === "ergaenzen")
           notizen.push(
-            `<p class="pr-dup-note">Bereits im Impfpass vorhanden — z. B. aus einem zweiten Impfausweis oder Übertrag. Bleibt abgewählt.</p>`
+            `<p class="pr-merge-note">Bereits im Impfpass vorhanden — es wird nichts doppelt angelegt, nur die fehlenden Angaben werden ergänzt: ${ergaenzungen.join(
+              ", "
+            )}.</p>`
+          );
+        if (modus === "doppelt")
+          notizen.push(
+            `<p class="pr-dup-note">Bereits vollständig im Impfpass vorhanden — z. B. aus einem zweiten Impfausweis oder Übertrag. Bleibt abgewählt.</p>`
           );
         if (e.konflikt)
           notizen.push(
@@ -1158,12 +1176,33 @@ REGELN
             )}</p>`
           );
 
+        /* Vorhandene Angaben werden angezeigt, aber nicht zum Ändern
+           angeboten — der Import überschreibt nie, er füllt nur auf. */
+        const eingabe = (label, feld, wert, platz) => `
+            <label><span class="pr-label">${label}</span>
+              <input type="text" data-feld="${feld}" data-i="${i}" value="${esc(wert)}" placeholder="${platz || ""}" />
+            </label>`;
+        const fest = (label, wert) => `
+            <label><span class="pr-label">${label}</span>
+              <span class="pr-fixed" title="Bleibt unverändert">${esc(wert)}</span>
+            </label>`;
+        const produktFeld =
+          bestand && bestand.product
+            ? fest("Impfstoff", bestand.product)
+            : eingabe("Impfstoff", "produkt", e.produkt, "Handelsname");
+        const chargeFeld =
+          bestand && bestand.batch
+            ? fest("Charge", bestand.batch)
+            : eingabe("Charge", "charge", e.charge);
+
         return `
-        <div class="pr-row${doppelt ? " pr-doppelt" : ""}">
+        <div class="pr-row${modus === "doppelt" ? " pr-doppelt" : ""}${
+          modus === "ergaenzen" ? " pr-ergaenzen" : ""
+        }">
           <div class="pr-row-head">
             <label class="pr-take">
-              <input type="checkbox" data-take="${i}" ${doppelt ? "" : "checked"} />
-              <span>übernehmen</span>
+              <input type="checkbox" data-take="${i}" ${modus === "doppelt" ? "" : "checked"} />
+              <span>${modus === "ergaenzen" ? "Angaben ergänzen" : "übernehmen"}</span>
             </label>
             <span class="pr-quelle">${esc(e.datumRoh || "")}</span>
           </div>
@@ -1171,12 +1210,8 @@ REGELN
             <label><span class="pr-label">Datum</span>
               <input type="date" data-feld="datum" data-i="${i}" value="${esc(datum)}" />
             </label>
-            <label><span class="pr-label">Impfstoff</span>
-              <input type="text" data-feld="produkt" data-i="${i}" value="${esc(e.produkt)}" placeholder="Handelsname" />
-            </label>
-            <label><span class="pr-label">Charge</span>
-              <input type="text" data-feld="charge" data-i="${i}" value="${esc(e.charge)}" />
-            </label>
+            ${produktFeld}
+            ${chargeFeld}
           </div>
           <label class="pr-sync">
             <input type="checkbox" data-sync="${i}" checked />
@@ -1230,8 +1265,22 @@ REGELN
 
         const an = dlg.querySelector(`[data-take="${i}"]`);
         if (!an || !an.checked || !datum) return;
-        // Sicherheitsnetz gegen Dubletten, falls das Datum geändert wurde.
-        if (recordsFor(p, block.vacId).some((r) => r.date === datum)) return;
+
+        /* Existiert der Eintrag schon, wird er angereichert statt doppelt
+           angelegt: Nur leere Felder werden gefüllt, Vorhandenes bleibt
+           unangetastet. Der Abgleich läuft über das aktuelle Datum im Feld —
+           wer das Datum ändert, legt bewusst einen neuen Eintrag an. */
+        const bestand = recordsFor(p, block.vacId).find((r) => r.date === datum);
+        if (bestand) {
+          let ergaenzt = false;
+          const produkt = hole("produkt");
+          const charge = hole("charge");
+          if (produkt && !bestand.product) { bestand.product = produkt; ergaenzt = true; }
+          if (charge && !bestand.batch) { bestand.batch = charge; ergaenzt = true; }
+          if (e.arzt && !bestand.doctor) { bestand.doctor = e.arzt; ergaenzt = true; }
+          if (ergaenzt) importErgaenzt++;
+          return;
+        }
         p.records.push({
           id: "imp" + Date.now() + "_" + importIndex + "_" + i,
           date: datum,
@@ -1256,9 +1305,12 @@ REGELN
         importWarnungen.slice(0, 8).map((w) => `<li>${esc(w)}</li>`).join("") +
         `</ul><p class="hint">Diese Einträge kannst du von Hand ergänzen.</p>`
       : "";
+    const ergaenztText = importErgaenzt
+      ? ` <strong>${importErgaenzt}</strong> bestehende(r) Eintrag/Einträge wurden um fehlende Angaben ergänzt.`
+      : "";
     showMessage(
       "Import abgeschlossen",
-      `<p><strong>${importUebernommen}</strong> Impfung(en) wurden eingetragen.</p>${rest}`
+      `<p><strong>${importUebernommen}</strong> Impfung(en) wurden eingetragen.${ergaenztText}</p>${rest}`
     );
     importVorschlaege = [];
     importWarnungen = [];
