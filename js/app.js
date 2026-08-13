@@ -958,6 +958,12 @@ REGELN
    bezeichnet die Charge. Zahlen wie "PAA012842" sind Pharmazentralnummern,
    keine Charge — weglassen. Ist nichts angegeben, "impfstoffe": [].
 
+5a. ÄRZTIN/ARZT: Übernimm in "arzt" den LESBAREN Text aus der Spalte
+   "Unterschrift und Stempel des Arztes" — Name und ggf. Ort, z. B.
+   "Dr. Norbert Skrzipczyk, Bad Driburg" oder "Praxis f. Kinder- u.
+   Jugendmedizin, Bad Driburg". Handschriftliche Unterschriften-Schnörkel
+   NICHT deuten; ist kein Stempel lesbar, setze "arzt": "".
+
 6. ANGEKREUZT: Nur Spalten, in denen wirklich ein Kreuz steht. Nutze die
    Spaltenüberschrift wörtlich. Achtung: Auf leeren Seiten schimmert die
    Rückseite durch — blasse, spiegelverkehrte Zeichen sind KEINE Kreuze.
@@ -1349,6 +1355,10 @@ REGELN
           bestand && bestand.batch
             ? fest("Charge", bestand.batch)
             : eingabe("Charge", "charge", e.charge);
+        const arztFeld =
+          bestand && bestand.doctor
+            ? fest("Arzt / Stempel", bestand.doctor)
+            : eingabe("Arzt / Stempel", "arzt", e.arzt, "Praxis oder Name");
 
         return `
         <div class="pr-row${modus === "doppelt" ? " pr-doppelt" : ""}${
@@ -1367,6 +1377,7 @@ REGELN
             </label>
             ${produktFeld}
             ${chargeFeld}
+            ${arztFeld}
           </div>
           <label class="pr-sync${e.datum === e.datumOrig ? " hidden" : ""}">
             <input type="checkbox" data-sync="${i}" ${e.sync === false ? "" : "checked"} />
@@ -1389,6 +1400,7 @@ REGELN
       feld.addEventListener("input", () => {
         if (feld.dataset.feld === "produkt") e.produkt = feld.value;
         else if (feld.dataset.feld === "charge") e.charge = feld.value;
+        else if (feld.dataset.feld === "arzt") e.arzt = feld.value;
       });
     });
     body.querySelectorAll('[data-feld="datum"]').forEach((feld) => {
@@ -1423,6 +1435,7 @@ REGELN
       el("#pr-add-datum").value = "";
       el("#pr-add-produkt").value = "";
       el("#pr-add-charge").value = "";
+      el("#pr-add-arzt").value = "";
       el("#pr-add-more").checked = false;
       el("#pr-add-msg").textContent = "";
       el("#pr-add-ziel").textContent = block.name;
@@ -1581,6 +1594,7 @@ REGELN
     const block = importVorschlaege[importIndex];
     const produkt = el("#pr-add-produkt").value.trim();
     const charge = el("#pr-add-charge").value.trim();
+    const arzt = el("#pr-add-arzt").value.trim();
     const weitere = el("#pr-add-more").checked
       ? [...el("#pr-add-liste").querySelectorAll("input:checked")].map((c) => c.value)
       : [];
@@ -1593,7 +1607,7 @@ REGELN
         datumRoh: "",
         produkt,
         charge,
-        arzt: "",
+        arzt,
         sicherheit: "",
         anmerkung: "",
         konflikt: null,
