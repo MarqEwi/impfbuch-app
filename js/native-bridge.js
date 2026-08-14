@@ -53,19 +53,32 @@
     URL.revokeObjectURL(url);
   }
 
-  // Wie saveTextFile, aber für Binärdaten (z. B. PDF): Inhalt kommt als
-  // Base64. Capacitor schreibt Base64 ohne encoding-Angabe direkt als
-  // Binärdatei; im Browser wird ein Blob-Download daraus.
-  async function saveBinaryFile(filename, base64, mimeType) {
+  /* Binärdatei (z. B. PDF), Inhalt als Base64. `modus` entscheidet:
+     "share" öffnet den Teilen-Dialog, "download" legt die Datei ab.
+     Nativ: Capacitor schreibt Base64 ohne encoding-Angabe direkt binär —
+     zum Speichern in DOCUMENTS (dort findet der Nutzer sie wieder), zum
+     Teilen in den CACHE (Wegwerf-Kopie für die Ziel-App). Im Browser gibt
+     es in beiden Fällen den Blob-Download; die Web-Share-API kann keine
+     Dateien aus dem Speicher heraus zuverlässig weiterreichen. */
+  async function saveBinaryFile(filename, base64, mimeType, modus) {
     if (isNative()) {
       const { Filesystem, Share } = window.Capacitor.Plugins;
+      if (modus === "download") {
+        const result = await Filesystem.writeFile({
+          path: filename,
+          data: base64,
+          directory: "DOCUMENTS",
+          recursive: true,
+        });
+        return { gespeichertUnter: result.uri };
+      }
       const result = await Filesystem.writeFile({
         path: filename,
         data: base64,
         directory: "CACHE",
       });
       await Share.share({ title: filename, url: result.uri });
-      return;
+      return {};
     }
     const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: mimeType || "application/octet-stream" });
@@ -75,6 +88,7 @@
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+    return {};
   }
 
   window.NativeBridge = { isNative, saveTextFile, saveBinaryFile };

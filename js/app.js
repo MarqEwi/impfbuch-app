@@ -3481,8 +3481,11 @@ REGELN
     const hint = el("#premium-hint");
     if (hint)
       hint.textContent = active
-        ? "Beliebig viele Profile und länderspezifische Reiseempfehlungen sind freigeschaltet."
-        : "Beliebig viele Profile und länderspezifische Reiseempfehlungen freischalten.";
+        ? "Beliebig viele Profile, länderspezifische Reiseempfehlungen und das Impfdaten-PDF sind freigeschaltet."
+        : "Beliebig viele Profile, länderspezifische Reiseempfehlungen und das Impfdaten-PDF freischalten.";
+    // Premium-Kennzeichnung am PDF-Knopf mitziehen
+    const pdfTag = el("#pdf-premium-tag");
+    if (pdfTag) pdfTag.classList.toggle("hidden", active);
   }
 
   // Schritt 1: schöner Erklär-Dialog, erst danach die Systemabfrage.
@@ -3913,18 +3916,41 @@ REGELN
       e.target.value = "";
     });
     alle(".btn-backup", "click", openBackup);
-    el("#btn-pdf").addEventListener("click", () => el("#pdf-dialog").showModal());
+    el("#btn-pdf").addEventListener("click", () => {
+      // Premium-Funktion: ohne Freischaltung erklärt der Dialog, warum.
+      if (!isPremium()) {
+        showPremiumDialog(
+          `<p>Das <strong>PDF deiner Impfdaten</strong> — zum Speichern, Ausdrucken oder Verschicken — ist eine Premium-Funktion.</p>` +
+            `<p>Deine Daten kannst du auch ohne Premium jederzeit sichern: „Backup erstellen" legt sie als Datei ab.</p>`
+        );
+        return;
+      }
+      el("#pdf-dialog").showModal();
+    });
     el("#pdf-cancel").addEventListener("click", () => el("#pdf-dialog").close());
     el("#pdf-go").addEventListener("click", async () => {
       const variante = el('#pdf-dialog input[name="pdf-art"]:checked').value;
+      const ziel = el('#pdf-dialog input[name="pdf-ziel"]:checked').value;
       el("#pdf-dialog").close();
       try {
         const { base64, dateiname } = window.PdfExport.erzeugen(
           activeProfile(),
           variante
         );
-        await window.NativeBridge.saveBinaryFile(dateiname, base64, "application/pdf");
-        showToast("PDF erstellt");
+        const ergebnis = await window.NativeBridge.saveBinaryFile(
+          dateiname,
+          base64,
+          "application/pdf",
+          ziel
+        );
+        if (ziel === "download" && ergebnis && ergebnis.gespeichertUnter)
+          showMessage(
+            "PDF gespeichert",
+            `<p>Die Datei liegt jetzt in deinen Dokumenten:</p><p><strong>${esc(
+              dateiname
+            )}</strong></p>`
+          );
+        else showToast(ziel === "share" ? "PDF bereit zum Teilen" : "PDF gespeichert");
       } catch (e) {
         showMessage(
           "PDF konnte nicht erstellt werden",

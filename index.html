@@ -200,6 +200,7 @@
           <button class="btn" id="btn-pdf">
             <span class="ic" data-icon="share"></span>
             Impfdaten downloaden / teilen
+            <em class="premium-tag hidden" id="pdf-premium-tag">Premium</em>
           </button>
           <p class="hint">
             Erstellt aus den Impfdaten der oben ausgewählten Person ein
@@ -549,6 +550,16 @@
           <input type="radio" name="pdf-art" value="impfbuch" />
           <span><strong>Impfbuch</strong> — Impfungen plus die freiwilligen
           persönlichen Angaben (Adresse, Krankenkasse, Blutgruppe …)</span>
+        </label>
+        <div class="setting-title">Was möchtest du damit tun?</div>
+        <label class="radio-item">
+          <input type="radio" name="pdf-ziel" value="download" checked />
+          <span><strong>Speichern</strong> — Datei auf dem Gerät ablegen</span>
+        </label>
+        <label class="radio-item">
+          <input type="radio" name="pdf-ziel" value="share" />
+          <span><strong>Teilen</strong> — an eine App weitergeben, z. B. Mail,
+          Cloud oder Messenger</span>
         </label>
         <div class="dlg-actions">
           <button type="button" class="btn" id="pdf-cancel">Abbrechen</button>
