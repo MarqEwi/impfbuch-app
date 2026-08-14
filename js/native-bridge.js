@@ -53,5 +53,29 @@
     URL.revokeObjectURL(url);
   }
 
-  window.NativeBridge = { isNative, saveTextFile };
+  // Wie saveTextFile, aber für Binärdaten (z. B. PDF): Inhalt kommt als
+  // Base64. Capacitor schreibt Base64 ohne encoding-Angabe direkt als
+  // Binärdatei; im Browser wird ein Blob-Download daraus.
+  async function saveBinaryFile(filename, base64, mimeType) {
+    if (isNative()) {
+      const { Filesystem, Share } = window.Capacitor.Plugins;
+      const result = await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: "CACHE",
+      });
+      await Share.share({ title: filename, url: result.uri });
+      return;
+    }
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: mimeType || "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  window.NativeBridge = { isNative, saveTextFile, saveBinaryFile };
 })();

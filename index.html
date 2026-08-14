@@ -197,6 +197,17 @@
             Speichert ausgewählte Profile oder alles inkl. Einstellungen als
             eine Backup-Datei. Wiederherstellen später über „Importieren".
           </p>
+          <button class="btn" id="btn-pdf">
+            <span class="ic" data-icon="share"></span>
+            Impfdaten downloaden / teilen
+          </button>
+          <p class="hint">
+            Erstellt aus den Impfdaten der oben ausgewählten Person ein
+            übersichtliches PDF für deine eigenen Unterlagen — zum
+            Abspeichern, Ausdrucken oder Verschicken, etwa falls der
+            Impfpass einmal verloren geht. Ersetzt nicht den amtlichen
+            Impfausweis.
+          </p>
         </div>
 
         <h2 class="panel-title">Ausgeblendete Impfungen</h2>
@@ -517,6 +528,31 @@
         </div>
         <div class="dlg-actions">
           <button type="button" class="btn btn-danger" id="pr-abort">Import abbrechen</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Dialog: Impfdaten als PDF -->
+    <dialog id="pdf-dialog">
+      <form method="dialog">
+        <h3>Impfdaten als PDF</h3>
+        <p class="hint">
+          Für deine eigenen Unterlagen — zum Abspeichern, Ausdrucken oder
+          Verschicken. Gilt für die gerade ausgewählte Person und ersetzt
+          nicht den amtlichen Impfausweis.
+        </p>
+        <label class="radio-item">
+          <input type="radio" name="pdf-art" value="impfungen" checked />
+          <span><strong>Impfübersicht</strong> — alle eingetragenen Impfungen</span>
+        </label>
+        <label class="radio-item">
+          <input type="radio" name="pdf-art" value="impfbuch" />
+          <span><strong>Impfbuch</strong> — Impfungen plus die freiwilligen
+          persönlichen Angaben (Adresse, Krankenkasse, Blutgruppe …)</span>
+        </label>
+        <div class="dlg-actions">
+          <button type="button" class="btn" id="pdf-cancel">Abbrechen</button>
+          <button type="button" class="btn btn-primary" id="pdf-go">PDF erstellen</button>
         </div>
       </form>
     </dialog>
@@ -948,6 +984,7 @@
     <script src="js/reminders-db.js"></script>
     <script src="js/stiko-data.js"></script>
     <script src="js/travel-data.js"></script>
+    <script src="js/pdf.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

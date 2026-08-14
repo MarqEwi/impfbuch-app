@@ -3776,6 +3776,7 @@ REGELN
     "book-dialog": "#book-cancel",
     "pass-import-dialog": "#pi-cancel",
     "pass-review-dialog": "#pr-abort",
+    "pdf-dialog": "#pdf-cancel",
   };
   let lastBackPress = 0;
 
@@ -3912,6 +3913,25 @@ REGELN
       e.target.value = "";
     });
     alle(".btn-backup", "click", openBackup);
+    el("#btn-pdf").addEventListener("click", () => el("#pdf-dialog").showModal());
+    el("#pdf-cancel").addEventListener("click", () => el("#pdf-dialog").close());
+    el("#pdf-go").addEventListener("click", async () => {
+      const variante = el('#pdf-dialog input[name="pdf-art"]:checked').value;
+      el("#pdf-dialog").close();
+      try {
+        const { base64, dateiname } = window.PdfExport.erzeugen(
+          activeProfile(),
+          variante
+        );
+        await window.NativeBridge.saveBinaryFile(dateiname, base64, "application/pdf");
+        showToast("PDF erstellt");
+      } catch (e) {
+        showMessage(
+          "PDF konnte nicht erstellt werden",
+          `<p>${esc(String((e && e.message) || e))}</p>`
+        );
+      }
+    });
     setupVaccineSearch();
     el("#btn-pass-import").addEventListener("click", openPassImport);
     el("#pi-cancel").addEventListener("click", () => el("#pass-import-dialog").close());
