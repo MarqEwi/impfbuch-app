@@ -476,10 +476,28 @@
             </button>
           </li>
           <li>
-            <strong>Antwort der KI hier einfügen.</strong>
+            <strong>Antwort abwarten und hier einfügen.</strong>
+            <span class="pi-warten">Bei vielen Seiten dauert das Auslesen
+            eine Weile. Warte, bis die KI wirklich fertig ist — kopiere erst
+            dann, sonst fehlt der Schluss und Impfungen gehen verloren.</span>
             <textarea id="pi-input" rows="7" placeholder="Antwort hier einfügen …"></textarea>
           </li>
         </ol>
+        <div class="pi-felder">
+          <div class="setting-title">Was soll übernommen werden?</div>
+          <label class="pi-feld">
+            <input type="checkbox" id="pi-take-charge" checked />
+            <span>Chargennummern</span>
+          </label>
+          <label class="pi-feld">
+            <input type="checkbox" id="pi-take-arzt" checked />
+            <span>Ärztin / Arzt (Stempel)</span>
+          </label>
+          <p class="hint">
+            Datum und Impfstoff werden immer übernommen. Was du hier abwählst,
+            bleibt leer — du kannst es später jederzeit von Hand ergänzen.
+          </p>
+        </div>
         <p class="hint" id="pi-msg"></p>
         <div class="dlg-actions">
           <button type="button" class="btn" id="pi-cancel">Abbrechen</button>
@@ -509,10 +527,10 @@
             <label><span class="pr-label">Impfstoff</span>
               <input type="text" id="pr-add-produkt" placeholder="Handelsname" />
             </label>
-            <label><span class="pr-label">Charge</span>
+            <label id="pr-add-charge-wrap"><span class="pr-label">Charge</span>
               <input type="text" id="pr-add-charge" />
             </label>
-            <label><span class="pr-label">Arzt / Stempel</span>
+            <label id="pr-add-arzt-wrap"><span class="pr-label">Arzt / Stempel</span>
               <input type="text" id="pr-add-arzt" placeholder="Praxis oder Name" />
             </label>
           </div>

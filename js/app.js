@@ -1174,8 +1174,8 @@ REGELN
           datum,
           datumRoh: z.datumRoh || "",
           produkt: produkt ? produkt.handelsname : "",
-          charge: produkt ? produkt.charge || "" : "",
-          arzt: z.arzt || "",
+          charge: importFelder.charge && produkt ? produkt.charge || "" : "",
+          arzt: importFelder.arzt ? z.arzt || "" : "",
           sicherheit: z.sicherheit || "",
           anmerkung: z.anmerkung || "",
           datumVerdacht,
@@ -1257,6 +1257,14 @@ REGELN
       return;
     }
 
+    /* Abgewählte Felder gar nicht erst in die Vorschläge lassen — so sind
+       sie auch im Prüfschritt leer und können nicht versehentlich doch
+       übernommen werden. */
+    importFelder = {
+      charge: el("#pi-take-charge").checked,
+      arzt: el("#pi-take-arzt").checked,
+    };
+
     const { vorschlaege, warnungen } = auswertenImport(daten);
     if (!vorschlaege.length) {
       msg.textContent =
@@ -1304,6 +1312,8 @@ REGELN
      derselben Passzeile wieder herausnehmen zu können. */
   let importAngelegt = [];
   let importAddBlock = null; // Block, für den das Nachtrage-Formular steht
+  // Welche Felder die Nutzerin übernehmen möchte (Schritt 1)
+  let importFelder = { charge: true, arzt: true };
 
   /* Beurteilt einen Eintrag gegen den Bestand: neu, ergänzbar (Lücken
      füllen) oder vollständig vorhanden — inkl. Familien-Schwestern. Wird
@@ -1461,14 +1471,20 @@ REGELN
           bestand && bestand.product
             ? fest("Impfstoff", bestand.product)
             : eingabe("Impfstoff", "produkt", e.produkt, "Handelsname");
+        /* Felder, die in Schritt 1 abgewählt wurden, gar nicht anzeigen —
+           es sei denn, im Bestand steht dort schon etwas. */
         const chargeFeld =
           bestand && bestand.batch
             ? fest("Charge", bestand.batch)
-            : eingabe("Charge", "charge", e.charge);
+            : importFelder.charge
+            ? eingabe("Charge", "charge", e.charge)
+            : "";
         const arztFeld =
           bestand && bestand.doctor
             ? fest("Arzt / Stempel", bestand.doctor)
-            : eingabe("Arzt / Stempel", "arzt", e.arzt, "Praxis oder Name");
+            : importFelder.arzt
+            ? eingabe("Arzt / Stempel", "arzt", e.arzt, "Praxis oder Name")
+            : "";
 
         return `
         <div class="pr-row${modus === "doppelt" ? " pr-doppelt" : ""}${
@@ -1567,6 +1583,9 @@ REGELN
       el("#pr-add-produkt").value = "";
       el("#pr-add-charge").value = "";
       el("#pr-add-arzt").value = "";
+      // Abgewählte Felder auch beim Nachtragen ausblenden
+      el("#pr-add-charge-wrap").classList.toggle("hidden", !importFelder.charge);
+      el("#pr-add-arzt-wrap").classList.toggle("hidden", !importFelder.arzt);
       el("#pr-add-more").checked = false;
       el("#pr-add-msg").textContent = "";
       el("#pr-add-ziel").textContent = block.name;
@@ -2544,9 +2563,14 @@ REGELN
             comboTag ? " · " + comboTag : ""
           }</span>
               </span>
-              <span class="ve-doctor${r.doctor ? "" : " muted"}">${
-            r.doctor ? esc(r.doctor) : "—"
-          }</span>
+              ${
+                r.doctor
+                  ? `<button type="button" class="ve-doctor ve-doctor-btn" data-doctor="${esc(
+                      r.doctor
+                    )}" data-doctor-date="${esc(fmtDate(parseDate(r.date)))}"
+                       title="Vollständig anzeigen">${esc(r.doctor)}</button>`
+                  : `<span class="ve-doctor muted">—</span>`
+              }
               <span class="ve-actions">
                 <button class="ve-edit" data-rec="${r.id}" title="Eintrag bearbeiten">✎</button>
                 <button class="ve-del" data-rec="${r.id}" title="Eintrag löschen">✕</button>
@@ -2675,6 +2699,17 @@ REGELN
     );
     row.querySelectorAll(".ve-edit").forEach((btn) =>
       btn.addEventListener("click", () => openEditRecord(btn.dataset.rec))
+    );
+    /* In der Tabelle ist die Arzt-Spalte schmal und der Stempeltext oft
+       lang — ein Tipp zeigt ihn vollständig. */
+    row.querySelectorAll(".ve-doctor-btn").forEach((btn) =>
+      btn.addEventListener("click", () =>
+        showMessage(
+          "Ärztin / Arzt · Stempel",
+          `<p class="msg-doctor">${esc(btn.dataset.doctor)}</p>` +
+            `<p class="hint">Impfung vom ${esc(btn.dataset.doctorDate)}</p>`
+        )
+      )
     );
     return row;
   }
