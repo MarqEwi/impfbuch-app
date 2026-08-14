@@ -462,20 +462,24 @@
           Gemini oder Claude. Die Impfbuch-App selbst wertet keine Bilder aus.
         </p>
         <ol class="pi-steps">
-          <li>Fotografiere die Innenseiten deines Impfpasses.</li>
           <li>
-            Gib die Fotos der externen KI zusammen mit dem Anleitungstext,
-            den du hier kopieren kannst.
+            <strong>Impfpass fotografieren.</strong> Schlag das Heft auf und
+            fotografiere immer die <strong>ganze Doppelseite</strong> auf
+            einmal — die Ankreuz-Spalten laufen über beide Seiten weiter.
+            Möglichst flach hinlegen, gutes Licht, Aufkleber scharf.
           </li>
-          <li>Füge die Antwort unten ein.</li>
+          <li>
+            <strong>Anleitungstext kopieren</strong> und zusammen mit den
+            Fotos der externen KI geben.
+            <button type="button" class="btn btn-small pi-step-btn" id="pi-copy-prompt">
+              <span class="ic" data-icon="upload"></span> Anleitungstext kopieren
+            </button>
+          </li>
+          <li>
+            <strong>Antwort der KI hier einfügen.</strong>
+            <textarea id="pi-input" rows="7" placeholder="Antwort hier einfügen …"></textarea>
+          </li>
         </ol>
-        <button type="button" class="btn" id="pi-copy-prompt">
-          <span class="ic" data-icon="upload"></span> Anleitungstext kopieren
-        </button>
-        <label>
-          Antwort der KI einfügen
-          <textarea id="pi-input" rows="7" placeholder="Hier den Text einfügen …"></textarea>
-        </label>
         <p class="hint" id="pi-msg"></p>
         <div class="dlg-actions">
           <button type="button" class="btn" id="pi-cancel">Abbrechen</button>

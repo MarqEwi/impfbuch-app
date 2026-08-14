@@ -1925,8 +1925,16 @@ dialog#quick-dialog::backdrop {
   font-weight: 700;
   box-shadow: 0 1px 3px rgba(45, 35, 0, 0.3);
 }
-#pi-copy-prompt {
-  margin-bottom: 12px;
+/* Schaltfläche bzw. Eingabefeld direkt im jeweiligen Schritt */
+.pi-steps .pi-step-btn {
+  display: block;
+  margin: 8px 0 2px;
+}
+.pi-steps textarea {
+  margin-top: 8px;
+}
+.pi-steps strong {
+  color: var(--ink);
 }
 #pi-input {
   width: 100%;
